@@ -25,16 +25,16 @@ class Wootan_Plugin extends Wootan_LifeCycle {
 //        return $i18nValue;
 //    }
 
-    protected function initOptions() {
-        $options = $this->getOptionMetaData();
-        if (!empty($options)) {
-            foreach ($options as $key => $arr) {
-                if (is_array($arr) && count($arr > 1)) {
-                    $this->addOption($key, $arr[1]);
-                }
-            }
-        }
-    }
+    // protected function initOptions() {
+    //     $options = $this->getOptionMetaData();
+    //     if (!empty($options)) {
+    //         foreach ($options as $key => $arr) {
+    //             if (is_array($arr) && count($arr > 1)) {
+    //                 $this->addOption($key, $arr[1]);
+    //             }
+    //         }
+    //     }
+    // }
 
     public function getPluginDisplayName() {
         return 'WooTan';
@@ -79,11 +79,12 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     public function upgrade() {
     }
 
+
     public function addActionsAndFilters() {
 
         // Add options administration page
         // http://plugin.michael-simpson.com/?page_id=47
-        add_action('admin_menu', array(&$this, 'addSettingsSubMenuPage'));
+        // add_action('admin_menu', array(&$this, 'addSettingsSubMenuPage'));
 
         // Example adding a script & style just for the options administration page
         // http://plugin.michael-simpson.com/?page_id=47
@@ -96,6 +97,15 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         // Add Actions & Filters
         // http://plugin.michael-simpson.com/?page_id=37
 
+        // register shipping method
+        add_filter(
+            'woocommerce_shipping_methods',
+            function( $methods ){
+                include_once('WC_Technotan_Shipping.php');
+                $methods[] = 'WC_Technotan_Shipping';
+                return $methods;
+            }
+        );
 
         // Adding scripts & styles to all pages
         // Examples:
