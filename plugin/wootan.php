@@ -77,8 +77,8 @@ function Wootan_noticeLasercommerceNotInstalled() {
 }
 
 function Wootan_LasercommerceCheck() {
-    if( !in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
-        add_action('admin_notices', 'WooTan_noticeWoocommerceNotInstalled');
+    if( !in_array( 'lasercommerce/lasercommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+        add_action('admin_notices', 'WooTan_noticeLasercommerceNotInstalled');
         return false;
     }
     return true;

@@ -76,8 +76,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_WAA1' => array(
 				'title' => __('Australia-Wide Wholesale Priority Freight'),
 				'dangerous' => 'N',
-				'include_roles' => array('wholesale'),
-				'max_container' => 'AIRLABEL1',
+				'include_roles' => array('wholesale_buyer'),
+				'max_total_container' => 'AIRLABEL1',
 				'elig_fn' => $elig_australia,
 				'cost_fn' => function( $package ){
 					return 16.95;
@@ -85,7 +85,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_RAR' => array(
 				'title' => __('Australia-Wide Road Freight'),
-				'exclude_roles' => array('wholesale'),
+				'exclude_roles' => array('wholesale_buyer'),
 				'elig_fn' => $elig_australia,
 				'cost_fn' => function( $package ){
 					return 6.95;
@@ -137,6 +137,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				if($item['kilo'] > $container['max_kilo']){
 					if(WP_DEBUG) error_log('--> does not fit, item too heavy');
 					return false;
+				} else {
+					if(WP_DEBUG) error_log('--> fits!');
 				}
 			} else {
 				if(WP_DEBUG) error_log('--> no weight specified');
@@ -153,18 +155,24 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 					$item['height']
 				);
 				$dim_max 	= $container['max_dim'];
-				$dim_maxr	= array( 
-					1.0 / $dim_max[0], 
-					1.0 / $dim_max[1],
-					1.0 / $dim_max[2],
-				);
-				$elig_matrix = array(
-					array( $dim_maxr[0] * $dim_item[0], $dim_maxr[0] * $dim_item[1], $dim_maxr[0] * $dim_item[2] ),
-					array( $dim_maxr[1] * $dim_item[0], $dim_maxr[1] * $dim_item[1], $dim_maxr[1] * $dim_item[2] ),
-					array( $dim_maxr[2] * $dim_item[0], $dim_maxr[2] * $dim_item[1], $dim_maxr[2] * $dim_item[2] ),
-				);		
 
-				if(WP_DEBUG) error_log('--> elig matrix: '.serialize($elig_matrix));
+				$fits = false;
+				foreach( range(0,2) as $rot ){ //inefficient
+					$fits = true;
+					foreach( range(0,2) as $dim){
+						if( $dim_item[$rot] > $dim_max[($rot + $dim)%3] ){
+							$fits = false;
+						}
+					}
+					if( $fits ) break; 
+				}
+
+				if(!$fits){
+					if(WP_DEBUG) error_log('--> does not fit');
+					return false;
+				} else {
+					if(WP_DEBUG) error_log('--> fits!');
+				}
 			} else {
 				if(WP_DEBUG) error_log('--> dims not specified');
 				return false;
@@ -184,7 +192,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				return false;
 			}
 		}
-		if(WP_DEBUG) error_log('-> item fits') ;
+		if(WP_DEBUG) error_log('-> fits!') ;
 		return true;
 	}
 
@@ -199,6 +207,10 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		$wootan_methods 	= $this->get_methods();
 
 		foreach( $wootan_methods as $code => $method ){
+			$name = isset($method['title'])?$method['title']:$code;
+
+			If(WP_DEBUG) error_log("-> testing eligibility of ".$name);
+			
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
 				If(WP_DEBUG) error_log("--> testing dangerous criteria");
@@ -216,26 +228,121 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				If(WP_DEBUG) error_log("--> testing role criteria");
 				$user = new WP_User( $package['user']['ID'] );
 
+				global $Lasercommerce_Tier_Tree;
+		        if (!isset($Lasercommerce_Tier_Tree)) {
+		            $Lasercommerce_Tier_Tree = new Lasercommerce_Tier_Tree();
+		        }
+
 				if ( !empty( $user->roles ) && is_array( $user->roles ) ) {
-					If(WP_DEBUG) error_log("---> user roles are".serialize($user->roles));
+					If(WP_DEBUG) error_log("---> user roles are: ".serialize($user->roles));
+					$visible = $Lasercommerce_Tier_Tree->getAvailableTiers($user->roles);
+					If(WP_DEBUG) error_log("---> visible roles are: ".serialize($visible));
+					if (isset($method['include_roles'])) {
+						$user_included = false;
+						foreach( $method['include_roles'] as $role ){
+							If(WP_DEBUG) error_log("---> is $role in ".serialize($visible));
+							
+							if ( in_array( $role, $visible ) ){
+								$user_included = true;
+							}
+						}
+						if (!$user_included) {
+							if(WP_DEBUG) error_log('---> user not included');
+							continue;
+						}
+					}
+					if (isset($method['exclude_roles'])) {
+						$user_excluded = false;
+						foreach( $method['exclude_roles'] as $role ){
+							if( in_array( $role, $visible )){
+								$user_excluded = true;
+							}
+						}
+						if( $user_excluded ){
+							if(WP_DEBUG) error_log('---> user is excluded');
+							continue;
+						}
+					}
 				} else {
 					If(WP_DEBUG) error_log("---> roles not set");
-
-				}
-			
-				if (isset($method['include_roles'])) {
-
-				} 
-				if (isset($method['exclude_roles'])) {
-					//TODO: test role is not in exclude roles
+					if (isset($method['include_roles'])) {
+						continue;
+					}
 				}
 			}
-			//test container
-			if (isset($method['min_container'])) {
-				# code...
-			}
-			if (isset($method['max_container'])) {
-				# code...
+			//test total containers
+			if (isset($method['min_total_container']) or isset($method['max_total_container'])) {
+				If(WP_DEBUG) error_log("--> testing total_container criteria");
+				
+				//get total weight, volume
+				$total_weight = 0;
+				$total_vol	  = 0;
+				foreach($package['contents'] as $line){
+					If(WP_DEBUG) error_log("---> analysing line: ".serialize($line));
+		            if($line['data']->has_weight()){
+		                $item_weight = $line['quantity'] * $line['data']->get_weight();
+		                $total_weight += wc_get_weight($item_weight, 'kg');
+		            } else {
+		                // throw exception because can't get weight
+		            }
+		            if($line['data']->has_dimensions()){
+		                $item_dim = explode(' x ', $line['data']->get_dimensions());
+		                $dimension_unit = get_option( 'woocommerce_dimension_unit' );
+		                $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]); 
+		                $item_vol = array_product(
+		                	array_map(
+		                		function($dim){
+		                			return wc_get_dimension($dim, 'm');
+	                			}, 
+	                			$item_dim
+                			)
+	                	);
+		                $total_vol += $line['quantity'] * $item_vol;
+		            } else {
+		                // throw exception because can't get dimensions
+		            }
+
+				}
+
+				$item = array(
+					'kilo' => $total_weight,
+					'cubic' => $total_vol
+				);
+
+				if (isset($method['min_total_container'])) {
+					$container = $method['min_total_container'];					
+					If(WP_DEBUG) error_log("--> testing min_total_container criteria: ".$method['min_total_container']);
+					if(in_array($container, array_keys($wootan_containers))){
+						$result = $this->fits_in_container($item, $wootan_containers[$container]);
+					} else {
+						If(WP_DEBUG) error_log("---> container does not exist: ".$container);
+						continue;
+					}
+					if($result){
+						if(WP_DEBUG) error_log("---> passed min_total_container criteria: ".$result);
+					} else {
+						if(WP_DEBUG) error_log("---> failed min_total_container criteria: ".$result);
+						continue;
+					}
+
+
+				}
+				if (isset($method['max_total_container'])) {
+					$container = $method['max_total_container'];
+					If(WP_DEBUG) error_log("--> testing max_total_container criteria: ".$container);
+					if(in_array($container, array_keys($wootan_containers))){
+						$result = $this->fits_in_container($item, $wootan_containers[$container]);
+					} else {
+						If(WP_DEBUG) error_log("---> container does not exist: ".$container);
+						continue;
+					}
+					if($result){
+						if(WP_DEBUG) error_log("---> passed max_total_container criteria: ".$result);
+					} else {
+						if(WP_DEBUG) error_log("---> failed max_total_container criteria: ".$result);
+						continue;
+					}
+				}
 			}
 			if (isset($method['elig_fn'])) {
 				If(WP_DEBUG) error_log("--> testing eligibility criteria");
@@ -251,7 +358,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			//gauntlet passed, add rate
 			If(WP_DEBUG) error_log("-> method passed");
 
-			$name = isset($method['title'])?$method['title']:$code;
+			
 			if( isset($method['cost_fn']) ){
 				$cost = call_user_func($method['cost_fn'], $package);
 			} else {
