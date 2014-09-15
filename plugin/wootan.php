@@ -45,7 +45,6 @@ function Wootan_noticePhpVersionWrong() {
          '</div>';
 }
 
-
 function Wootan_PhpVersionCheck() {
     global $Wootan_minimalRequiredPhpVersion;
     if (version_compare(phpversion(), $Wootan_minimalRequiredPhpVersion) < 0) {
@@ -55,6 +54,35 @@ function Wootan_PhpVersionCheck() {
     return true;
 }
 
+function Wootan_noticeWoocommerceNotInstalled() {
+    echo 
+        '<div class="updated fade">' .
+        __('Error: plugin "WooTan" requires WooCommerce to be installed',  'WooTan') .
+        '</div>';
+}
+
+function Wootan_WoocommerceCheck() {
+    if( !in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+        add_action('admin_notices', 'WooTan_noticeWoocommerceNotInstalled');
+        return false;
+    }
+    return true;
+}
+
+function Wootan_noticeLasercommerceNotInstalled() {
+    echo 
+        '<div class="updated fade">' .
+        __('Error: plugin "WooTan" requires LaserCommerce to be installed',  'WooTan') .
+        '</div>';
+}
+
+function Wootan_LasercommerceCheck() {
+    if( !in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+        add_action('admin_notices', 'WooTan_noticeWoocommerceNotInstalled');
+        return false;
+    }
+    return true;
+}
 
 /**
  * Initialize internationalization (i18n) for this plugin.

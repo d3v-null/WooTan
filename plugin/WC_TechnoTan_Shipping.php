@@ -202,21 +202,33 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
 				If(WP_DEBUG) error_log("--> testing dangerous criteria");
-				//TODO: LOOP THROUGH PRODUCTS IN PACKAGE, SEE IF ANY ARE DANGEROUS
+				//TODO: 
 				foreach( $package['contents'] as $line ){
 					$data = $line['data'];
 					If(WP_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
-					$danger = get_post_meta($data->post->id, 'wootan_dangerous');
+					$danger = get_post_meta($data->post->ID, 'wootan_dangerous');
 					If(WP_DEBUG) error_log("----> danger is ".$danger);
 				}
 
 			}
-			//test role
-			if (isset($method['include_roles'])) {
-				//TODO: Test roles is in include roles
-			} 
-			if (isset($method['exclude_roles'])) {
-				//TODO: test role is not in exclude roles
+			//do we care about their role?
+			if( isset($method['include_roles']) or isset($method['exclude_roles'])){
+				If(WP_DEBUG) error_log("--> testing role criteria");
+				$user = new WP_User( $package['user']['ID'] );
+
+				if ( !empty( $user->roles ) && is_array( $user->roles ) ) {
+					If(WP_DEBUG) error_log("---> user roles are".serialize($user->roles));
+				} else {
+					If(WP_DEBUG) error_log("---> roles not set");
+
+				}
+			
+				if (isset($method['include_roles'])) {
+
+				} 
+				if (isset($method['exclude_roles'])) {
+					//TODO: test role is not in exclude roles
+				}
 			}
 			//test container
 			if (isset($method['min_container'])) {
