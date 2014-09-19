@@ -101,7 +101,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         add_filter(
             'woocommerce_shipping_methods',
             function( $methods ){
-                include_once('WC_Technotan_Shipping.php');
+                require_once( dirname( __FILE__ ) .  "/WC_TechnoTan_Shipping.php" );
                 $methods[] = 'WC_Technotan_Shipping';
                 return $methods;
             }
