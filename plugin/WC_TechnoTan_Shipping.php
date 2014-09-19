@@ -472,12 +472,22 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
 				If(WP_DEBUG) error_log("--> testing dangerous criteria");
-				//TODO: 
+				$dangerous = false;
 				foreach( $package['contents'] as $line ){
 					$data = $line['data'];
 					If(WP_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
-					$danger = get_post_meta($data->post->ID, 'wootan_dangerous');
-					If(WP_DEBUG) error_log("----> danger is ".$danger);
+					$danger = get_post_meta($data->post->ID, 'wootan_danger', true);
+					If(WP_DEBUG) error_log("----> danger is ".serialize($danger));
+					if( $danger == "Y" ){
+						$dangerous = true;
+						break;
+					}
+				}
+				if( $dangerous) {
+					If(WP_DEBUG) error_log("--> failed danger criteria");
+					continue;
+				} else {
+					If(WP_DEBUG) error_log("--> passed danger criteria");
 				}
 
 			}
