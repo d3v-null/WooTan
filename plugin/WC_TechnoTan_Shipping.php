@@ -102,7 +102,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_WAA1' => array(
 				'title' => __('Australia-Wide Wholesale Priority Freight 1kg'),
 				'dangerous' => 'N',
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_total_container' => 'LABEL1',
 				'elig_fn' => $elig_australia,
 				'cost_fn' => function( $package ){
@@ -112,7 +112,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_WAA3' => array(
 				'title' => __('Australia-Wide Wholesale Priority Freight 1-3kg'),
 				'dangerous' => 'N',
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL1',
 				'max_total_container' => 'LABEL3',
 				'elig_fn' => $elig_australia,
@@ -123,7 +123,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_WAA5' => array(
 				'title' => __('Australia-Wide Wholesale Priority Freight 3-5kg'),
 				'dangerous' => 'N',
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL3',
 				'max_total_container' => 'LABEL5',
 				'elig_fn' => $elig_australia,
@@ -134,7 +134,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_WAA' => array(
 				'title' => __('Australia-Wide Wholesale Priority Freight 5kg+'),
 				'dangerous' => 'N',
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL5',
 				'max_item_container' => 'LABEL5',
 				'elig_fn' => $elig_australia,
@@ -149,7 +149,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_WAR5'=> array(
 				'title' => __('Australia-Wide Wholesale Road Freight 5kg'),
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_total_container' => 'LABEL5',
 				'elig_fn' => $elig_australia,
 				'cost_fn' => function( $package ){
@@ -158,7 +158,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_WAR10'=> array(
 				'title' => __('Australia-Wide Wholesale Road Freight 10kg'),
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL5',
 				'max_total_container' => 'LABEL10',
 				'elig_fn' => $elig_australia,
@@ -168,7 +168,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_WAR20'=> array(
 				'title' => __('Australia-Wide Wholesale Road Freight 20kg'),
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL10',
 				'max_total_container' => 'LABEL20',
 				'elig_fn' => $elig_australia,
@@ -178,7 +178,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_WAR'=> array(
 				'title' => __('Australia-Wide Wholesale Road Freight 20kg+'),
-				'include_roles' => array('wholesale_buyer'),
+				'include_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'min_total_container' => 'LABEL20',
 				'max_item_container' => 'LABEL20',
 				'elig_fn' => $elig_australia,
@@ -193,7 +193,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),								
 			'TT_RARF' => array(
 				'title' => __('Free Australia-Wide Road Freight'),
-				'exclude_roles' => array('wholesale_buyer'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
 						call_user_func( $elig_australia, $package ) and 
@@ -206,7 +206,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),							
 			'TT_RAAF' => array(
 				'title' => __('Free Australia-Wide Air Freight'),
-				'exclude_roles' => array('wholesale_buyer'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_item_container' => 'LABEL5',		
 				'dangerous' => 'N',		
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
@@ -221,7 +221,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),							
 			'TT_RAR' => array(
 				'title' => __('Australia-Wide Road Freight'),
-				'exclude_roles' => array('wholesale_buyer'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
 						call_user_func( $elig_australia, $package ) and 
@@ -234,7 +234,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),							
 			'TT_RAA' => array(
 				'title' => __('Australia-Wide Air Freight'),
-				'exclude_roles' => array('wholesale_buyer'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_item_container' => 'LABEL5',
 				'dangerous' => 'N',				
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
