@@ -8,6 +8,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 	public function __construct(){
 		require_once('Wootan_Plugin.php');
+
+		if(WP_DEBUG and WOOTAN_DEBUG) error_log( 'wootan debugging enabled');
+
 		$this->wootan = new Wootan_Plugin();
 
 		$this->id = 'TechnoTan_Shipping';
@@ -60,8 +63,10 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	}
 
 	public function get_methods(){
-		//helper callback functions
+		//sanity check
 
+
+		//helper callback functions
 		$elig_australia = function( $package ){
 			if(WP_DEBUG and WOOTAN_DEBUG) error_log( 'testing australian eligibility');// of '.serialize($package) );
 			if( isset( $package['destination'] ) ) {
@@ -88,7 +93,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			if(!$summary){
 				return false;
 			} else {
-				return max(array($summary['total_weight'], $summary['total_volume']/$WC_TechnoTan_Shipping->cubic_rate));			
+				$cubic_rate = $WC_TechnoTan_Shipping->cubic_rate;
+				assert($cubic_rate <> 0); //sanity check
+				return max(array($summary['total_weight'], $summary['total_volume']/$cubic_rate));			
 			}
 		};
 
@@ -445,7 +452,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> summary is: ".serialize($summary));
 			} else {
 				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> cannot get summary");
-				exit;
+				return;
 			}		
 		}
 		if(isset($fucks_given['roles'])){
