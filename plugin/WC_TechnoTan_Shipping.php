@@ -1,7 +1,8 @@
 <?php
 global $woocommerce;
 
-define('WOOTAN_DEBUG', false);
+if(!defined('WOOTAN_DEBUG'))
+	define('WOOTAN_DEBUG', false);
 
 class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
@@ -202,7 +203,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),								
 			'TT_RARF' => array(
 				'title' => __('Free Australia-Wide Road Freight'),
-				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
+				'include_roles' => array('rn', 'rp', 'xrn', 'xrp'),
+				// 'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
 						call_user_func( $elig_australia, $package ) and 
@@ -215,7 +217,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),							
 			'TT_RAAF' => array(
 				'title' => __('Free Australia-Wide Air Freight'),
-				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
+				'include_roles' => array('rn', 'rp', 'xrn', 'xrp'),
+				// 'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_item_container' => 'LABEL5',		
 				'dangerous' => 'N',		
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
