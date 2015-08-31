@@ -10,7 +10,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	public function __construct(){
 		require_once('Wootan_Plugin.php');
 
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log( 'wootan debugging enabled');
+		if(WOOTAN_DEBUG) error_log( 'wootan debugging enabled');
 
 		$this->wootan = new Wootan_Plugin();
 
@@ -69,19 +69,19 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 		//helper callback functions
 		$elig_australia = function( $package ){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log( 'testing australian eligibility');// of '.serialize($package) );
+			if(WOOTAN_DEBUG) error_log( 'testing australian eligibility');// of '.serialize($package) );
 			if( isset( $package['destination'] ) ) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log( '-> destionation is set' );
+				if(WOOTAN_DEBUG) error_log( '-> destionation is set' );
 				if( $package['destination']['country'] != 'AU'){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log( '-> destionation is not australia' );
+					if(WOOTAN_DEBUG) error_log( '-> destionation is not australia' );
 					return false;
 				}
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log( '-> destionation is not set' );
+				if(WOOTAN_DEBUG) error_log( '-> destionation is not set' );
 				return false;
 			}
 
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log( 'passed Australian eligibility' );
+			if(WOOTAN_DEBUG) error_log( 'passed Australian eligibility' );
 			return true;
 		};
 
@@ -204,7 +204,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_RARF' => array(
 				'title' => __('Free Australia-Wide Road Freight'),
 				'include_roles' => array('rn', 'rp', 'xrn', 'xrp'),
-				// 'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
 						call_user_func( $elig_australia, $package ) and 
@@ -218,7 +218,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			'TT_RAAF' => array(
 				'title' => __('Free Australia-Wide Air Freight'),
 				'include_roles' => array('rn', 'rp', 'xrn', 'xrp'),
-				// 'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
+				'exclude_roles' => array('wn', 'wp', 'dn', 'dp', 'xwn', 'xwp', 'xdn', 'xdp'),
 				'max_item_container' => 'LABEL5',		
 				'dangerous' => 'N',		
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
@@ -262,6 +262,19 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		);		
 	}
 
+	public function get_volume($dimensions){
+		return array_product(
+	    	array_map(
+	    		function($dim){
+	    			$meters = wc_get_dimension($dim, 'm');
+	    			if(WOOTAN_DEBUG) error_log("-> converting $dim to meters: $meters");
+	    			return $meters;
+				}, 
+				$dimensions
+			)
+		);
+	}
+
 	public function get_containers() {
 		$cubic_rate = 250.0;
 
@@ -302,15 +315,17 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	}
 
 	public function get_summary($contents){
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log("getting totals for contents: ".serialize($contents));
+		if(WOOTAN_DEBUG) error_log("getting totals for contents: ".serialize($contents));
+		$dimension_unit = get_option( 'woocommerce_dimension_unit' );
+		if(WOOTAN_DEBUG) error_log("dimensions are in $dimension_unit");
 		$total_weight = 0;
 		$total_vol	  = 0;
 
 		foreach($contents as $line){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> analysing line: ".$line['product_id']);
+			if(WOOTAN_DEBUG) error_log("-> analysing line: ".$line['product_id']);
             if($line['data']->has_weight()){
                 $item_weight = wc_get_weight( $line['data']->get_weight(), 'kg');
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> item weight: $item_weight");
+				if(WOOTAN_DEBUG) error_log("--> item weight: $item_weight");
                 $total_weight += $line['quantity'] * $item_weight;
             } else {
                 return false;
@@ -319,22 +334,15 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 $item_dim = explode(' x ', $line['data']->get_dimensions());
                 $dimension_unit = get_option( 'woocommerce_dimension_unit' );
                 $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]); 
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> item dim: ".serialize($item_dim));
-                $item_vol = array_product(
-                	array_map(
-                		function($dim){
-                			return wc_get_dimension($dim, 'm');
-            			}, 
-            			$item_dim
-        			)
-            	);
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> item vol: $item_vol");
+				if(WOOTAN_DEBUG) error_log("--> item dim: ".serialize($item_dim));
+                $item_vol = $this->get_volume($item_dim);
+				if(WOOTAN_DEBUG) error_log("--> item vol: $item_vol");
                 $total_vol += $line['quantity'] * $item_vol;
             } else {
                 return false;
             }
 		}	
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> total weight: $total_weight, total volume: $total_vol");
+		if(WOOTAN_DEBUG) error_log("-> total weight: $total_weight, total volume: $total_vol");
 		return array(
 			'total_weight' => $total_weight,
 			'total_volume' => $total_vol,
@@ -342,7 +350,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	}
 
 	public function fits_in_container($item, $container){
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log(
+		if(WOOTAN_DEBUG) error_log(
 			'testing eligibility of '.
 			serialize($item).
 			' for container '.
@@ -350,22 +358,22 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		);
 		//weight eligibility
 		if(isset($container['max_kilo'])){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log('-> testing weight eligibility');
+			if(WOOTAN_DEBUG) error_log('-> testing weight eligibility');
 			if(isset($item['kilo'])){
 				if($item['kilo'] > $container['max_kilo']){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> does not fit, item too heavy');
+					if(WOOTAN_DEBUG) error_log('--> does not fit, item too heavy');
 					return false;
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> fits!');
+					if(WOOTAN_DEBUG) error_log('--> fits!');
 				}
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> no weight specified');
+				if(WOOTAN_DEBUG) error_log('--> no weight specified');
 				return false;
 			}
 		}
 		//dim eligibility
 		if(isset($container['max_dim'])){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log('-> testing dim eligibility');
+			if(WOOTAN_DEBUG) error_log('-> testing dim eligibility');
 			if( isset($item['length']) and isset($item['width']) and isset($item['height']) ){
 				$dim_item 	= array( 
 					$item['length'], 
@@ -386,32 +394,35 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 
 				if(!$fits){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> does not fit');
+					if(WOOTAN_DEBUG) error_log('--> does not fit');
 					return false;
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> fits!');
+					if(WOOTAN_DEBUG) error_log('--> fits!');
 				}
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> dims not specified');
+				if(WOOTAN_DEBUG) error_log('--> dims not specified');
 				return false;
 			}
 		}
 		//vol eligiblity
 		if(isset($container['max_cubic'])){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log('-> testing vol eligibility');
+			if(WOOTAN_DEBUG) error_log('-> testing vol eligibility');
 			if(isset($item['length']) and isset($item['width']) and isset($item['height'])){
-				$vol = $item['length'] * $item['width'] * $item['height'] / 1000000000;
+				$item_dim = array($item['length'], $item['width'], $item['height']);
+				if(WOOTAN_DEBUG) error_log('-> item_dim'.serialize($item_dim));
+				$item_vol = $this->get_volume($item_dim);
+				// $vol = ($item['length']/100)  * ($item['width']/100) * ($item['height']/100) ;
 				$max_vol = $container['max_cubic'];
-				if( $vol > $max_vol ){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> does not fit, item too big: $vol > $max_vol");
+				if( $item_vol > $max_vol ){
+					if(WOOTAN_DEBUG) error_log("--> does not fit, item too big: $item_vol > $max_vol");
 					return false;
 				}
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> dims not specified');
+				if(WOOTAN_DEBUG) error_log('--> dims not specified');
 				return false;
 			}
 		}
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log('--> fits!') ;
+		if(WOOTAN_DEBUG) error_log('--> fits!') ;
 		return true;
 	}
 
@@ -420,13 +431,13 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	// }
 
 	function calculate_shipping( $package ) {
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log("calculating shipping for ".serialize($package));
+		if(WOOTAN_DEBUG) error_log("calculating shipping for ".serialize($package));
 
 		$wootan_containers 	= $this->get_containers();
 		$wootan_methods 	= $this->get_methods();
 
 		//determine precisely how many fucks to give
-		if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> determining number of fucks given");
+		if(WOOTAN_DEBUG) error_log("-> determining number of fucks given");
 		$fucks_given = array();
 		foreach( $wootan_methods as $code => $method ){
 			if( array_intersect( 
@@ -449,17 +460,17 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			}						
 		}
 		if(isset($fucks_given['summary'])){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> getting summary");
+			if(WOOTAN_DEBUG) error_log("--> getting summary");
 			$summary = $this->get_summary($package['contents']);
 			if($summary){
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> summary is: ".serialize($summary));
+				if(WOOTAN_DEBUG) error_log("---> summary is: ".serialize($summary));
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> cannot get summary");
+				if(WOOTAN_DEBUG) error_log("---> cannot get summary");
 				return;
 			}		
 		}
 		if(isset($fucks_given['roles'])){
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> getting roles");
+			if(WOOTAN_DEBUG) error_log("--> getting roles");
 			$user = new WP_User( $package['user']['ID'] );
 			global $Lasercommerce_Tier_Tree;
 	        if (!isset($Lasercommerce_Tier_Tree)) {
@@ -467,65 +478,65 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	        }
 
 			if ( isset( $user->roles ) ) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> user roles are: ".serialize($user->roles));
+				if(WOOTAN_DEBUG) error_log("---> user roles are: ".serialize($user->roles));
 				$visible = $Lasercommerce_Tier_Tree->getAvailableTiers($user->roles);
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> visible tiers are: ".serialize($visible));
+				if(WOOTAN_DEBUG) error_log("---> visible tiers are: ".serialize($visible));
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> cannot get roles");
+				if(WOOTAN_DEBUG) error_log("---> cannot get roles");
 			}
 		}
 
 		foreach( $wootan_methods as $code => $method ){
 			$name = isset($method['title'])?$method['title']:$code;
 
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("");
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> testing eligibility of ".$name);
+			if(WOOTAN_DEBUG) error_log("");
+			if(WOOTAN_DEBUG) error_log("-> testing eligibility of ".$name);
 			
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing dangerous criteria");
+				if(WOOTAN_DEBUG) error_log("--> testing dangerous criteria");
 				$dangerous = false;
 				foreach( $package['contents'] as $line ){
 					$data = $line['data'];
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
+					if(WOOTAN_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
 					$danger = get_post_meta($data->post->ID, 'wootan_danger', true);
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
+					if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
 					if( $danger == "Y" ){
 						$dangerous = true;
 						break;
 					}
 				}
 				if( $dangerous) {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> failed danger criteria");
+					if(WOOTAN_DEBUG) error_log("--> failed danger criteria");
 					continue;
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> passed danger criteria");
+					if(WOOTAN_DEBUG) error_log("--> passed danger criteria");
 				}
 
 			}
 
 			if (isset($method['include_roles'])) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing include role criteria");
+				if(WOOTAN_DEBUG) error_log("--> testing include role criteria");
 				if( array_intersect( $method['include_roles'], $visible ) ) {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('---> user included');
+					if(WOOTAN_DEBUG) error_log('---> user included');
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('---> user not included');
+					if(WOOTAN_DEBUG) error_log('---> user not included');
 					continue;
 				}
 			}
 			if (isset($method['exclude_roles'])) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing exclude role criteria");
+				if(WOOTAN_DEBUG) error_log("--> testing exclude role criteria");
 				if( array_intersect( $method['exclude_roles'], $visible) ) {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('---> user excluded');
+					if(WOOTAN_DEBUG) error_log('---> user excluded');
 					continue;
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log('---> user not excluded');
+					if(WOOTAN_DEBUG) error_log('---> user not excluded');
 				}			
 			}
 
 			//test total containers
 			if (isset($method['min_total_container']) or isset($method['max_total_container'])) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing total_container criteria");
+				if(WOOTAN_DEBUG) error_log("--> testing total_container criteria");
 
 				$cube_length = pow($summary['total_volume'], 1.0/3.0) * 1000;
 
@@ -538,44 +549,44 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 				if (isset($method['min_total_container'])) {
 					$container = $method['min_total_container'];					
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing min_total_container criteria: ".$method['min_total_container']);
+					if(WOOTAN_DEBUG) error_log("--> testing min_total_container criteria: ".$method['min_total_container']);
 					if(in_array($container, array_keys($wootan_containers))){
 						$result = $this->fits_in_container($total_item, $wootan_containers[$container]);
 					} else {
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
+						if(WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
 						continue;
 					}
 					if(!$result){
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> passed min_total_container criteria: ".$result);
+						if(WOOTAN_DEBUG) error_log("---> passed min_total_container criteria: ".$result);
 					} else {
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> failed min_total_container criteria: ".$result);
+						if(WOOTAN_DEBUG) error_log("---> failed min_total_container criteria: ".$result);
 						continue;
 					}
 				}
 				if (isset($method['max_total_container'])) {
 					$container = $method['max_total_container'];
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing max_total_container criteria: ".$container);
+					if(WOOTAN_DEBUG) error_log("--> testing max_total_container criteria: ".$container);
 					if(in_array($container, array_keys($wootan_containers))){
 						$result = $this->fits_in_container($total_item, $wootan_containers[$container]);
 					} else {
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
+						if(WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
 						continue;
 					}
 					if($result){
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> passed max_total_container criteria: ".$result);
+						if(WOOTAN_DEBUG) error_log("---> passed max_total_container criteria: ".$result);
 					} else {
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> failed max_total_container criteria: ".$result);
+						if(WOOTAN_DEBUG) error_log("---> failed max_total_container criteria: ".$result);
 						continue;
 					}
 				}
 			}
 			if (isset($method['max_item_container'])){
 				$container = $method['max_item_container'];
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing item_container criteria: ".$container);
+				if(WOOTAN_DEBUG) error_log("--> testing item_container criteria: ".$container);
 				$fits = true;
 				foreach ($package['contents'] as $line) {
 
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> analysing line: ".$line['product_id']);
+					if(WOOTAN_DEBUG) error_log("---> analysing line: ".$line['product_id']);
 		            if($line['data']->has_weight()){
 		                $item_weight = wc_get_weight($line['data']->get_weight(), 'kg');
 		            } else {
@@ -597,14 +608,14 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	            	if(in_array($container, array_keys($wootan_containers))){
 		            	$result = $this->fits_in_container( $item, $wootan_containers[$container]);
 						if($result){
-							if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> passed max_item_container criteria: ".$result);
+							if(WOOTAN_DEBUG) error_log("---> passed max_item_container criteria: ".$result);
 						} else {
-							if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> failed max_item_container criteria: ".$result);
+							if(WOOTAN_DEBUG) error_log("---> failed max_item_container criteria: ".$result);
 							$fits = false;
 							break;
 						}
 	            	} else {
-						if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
+						if(WOOTAN_DEBUG) error_log("---> container does not exist: ".$container);
 						$fits = false;
 						break;
 					}
@@ -614,28 +625,28 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			}
 			if (isset($method['elig_fn'])) {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("--> testing eligibility criteria");
+				if(WOOTAN_DEBUG) error_log("--> testing eligibility criteria");
 				$result = call_user_func($method['elig_fn'], $package);
 				if($result){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> passed eligibility criteria: ".$result);
+					if(WOOTAN_DEBUG) error_log("---> passed eligibility criteria: ".$result);
 				} else {
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("---> failed eligibility criteria: ".$result);
+					if(WOOTAN_DEBUG) error_log("---> failed eligibility criteria: ".$result);
 					continue;
 				}
 			}
 
 			//gauntlet passed, add rate
-			if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> method passed");
+			if(WOOTAN_DEBUG) error_log("-> method passed");
 
 			
 			if( isset($method['cost_fn']) ){
 				$cost = call_user_func($method['cost_fn'], $package);
 				if(! is_numeric( $cost ) ){
-					if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> cost could not be determined!");
+					if(WOOTAN_DEBUG) error_log("-> cost could not be determined!");
 					continue;
 				}
 			} else {
-				if(WP_DEBUG and WOOTAN_DEBUG) error_log("-> No Cost function set!");
+				if(WOOTAN_DEBUG) error_log("-> No Cost function set!");
 				continue;
 			}
 
