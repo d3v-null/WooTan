@@ -477,13 +477,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	            $Lasercommerce_Tier_Tree = new Lasercommerce_Tier_Tree();
 	        }
 
-			if ( isset( $user->roles ) ) {
-				if(WOOTAN_DEBUG) error_log("---> user roles are: ".serialize($user->roles));
-				$visible = $Lasercommerce_Tier_Tree->getAvailableTiers($user->roles);
-				if(WOOTAN_DEBUG) error_log("---> visible tiers are: ".serialize($visible));
-			} else {
-				if(WOOTAN_DEBUG) error_log("---> cannot get roles");
-			}
+			$visibleTiers = $Lasercommerce_Tier_Tree->getAvailableTiers($user);
+			$visibleTierIDs = $Lasercommerce_Tier_Tree->getTierIDs($visibleTiers);
+			if(WOOTAN_DEBUG) error_log("---> visible tiers are: ".serialize($visibleTierIDs));
 		}
 
 		foreach( $wootan_methods as $code => $method ){
@@ -517,7 +513,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 			if (isset($method['include_roles'])) {
 				if(WOOTAN_DEBUG) error_log("--> testing include role criteria");
-				if( array_intersect( $method['include_roles'], $visible ) ) {
+				if( array_intersect( $method['include_roles'], $visibleTierIDs ) ) {
 					if(WOOTAN_DEBUG) error_log('---> user included');
 				} else {
 					if(WOOTAN_DEBUG) error_log('---> user not included');
@@ -526,7 +522,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			}
 			if (isset($method['exclude_roles'])) {
 				if(WOOTAN_DEBUG) error_log("--> testing exclude role criteria");
-				if( array_intersect( $method['exclude_roles'], $visible) ) {
+				if( array_intersect( $method['exclude_roles'], $visibleTierIDs) ) {
 					if(WOOTAN_DEBUG) error_log('---> user excluded');
 					continue;
 				} else {
