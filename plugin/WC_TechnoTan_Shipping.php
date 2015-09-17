@@ -477,7 +477,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	            $Lasercommerce_Tier_Tree = new Lasercommerce_Tier_Tree();
 	        }
 
-			$visibleTiers = $Lasercommerce_Tier_Tree->getAvailableTiers($user);
+			$visibleTiers = $Lasercommerce_Tier_Tree->getVisibleTiers($user);
 			$visibleTierIDs = $Lasercommerce_Tier_Tree->getTierIDs($visibleTiers);
 			if(WOOTAN_DEBUG) error_log("---> visible tiers are: ".serialize($visibleTierIDs));
 		}
