@@ -183,7 +183,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				'max_total_container' => 'LABEL20',
 				'elig_fn' => $elig_australia,
 				'cost_fn' => function( $package ){
-					return 16.95;
+					return 19.95;
 				}
 			),
 			'TT_WAR'=> array(
