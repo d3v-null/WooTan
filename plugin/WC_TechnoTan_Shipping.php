@@ -12,7 +12,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 		if(WOOTAN_DEBUG) error_log( 'wootan debugging enabled');
 
-		$this->wootan = new Wootan_Plugin();
+		$this->tree = Lasercommerce_Tier_Tree::instance();
+		$this->wootan = Wootan_Plugin::instance();
 
 		$this->id = 'TechnoTan_Shipping';
 		$this->method_title	= __( 'TechnoTan Shipping' );

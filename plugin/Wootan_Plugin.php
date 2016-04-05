@@ -5,6 +5,22 @@ include_once('Wootan_LifeCycle.php');
 
 class Wootan_Plugin extends Wootan_LifeCycle {
 
+    private static $instance;
+    
+    public static function init() {
+        if ( self::$instance == null ) {
+            self::$instance = new Wootan_Plugin();
+        }
+    }
+
+    public static function instance() {
+        if ( self::$instance == null ) {
+            self::init();
+        }
+
+        return self::$instance;
+    }
+
     /**
      * See: http://plugin.michael-simpson.com/?page_id=31
      * @return array of option meta data.
