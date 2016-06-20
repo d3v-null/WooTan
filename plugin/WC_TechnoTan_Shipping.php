@@ -24,7 +24,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 		$this->service_pref_option = $this->id.'_service_preferences';
 		$this->matched_suburb_option = $this->id.'_matched_suburb';
-        $this->matched_state_option = $this->id.'_matched_state';        
+        $this->matched_state_option = $this->id.'_matched_state';
 
         add_action( 'woocommerce_update_options_shipping_'.$this->id, array( $this, 'process_admin_options' ) );
         // add_action( 'woocommerce_update_options_shipping_'.$this->id, array( $this, 'process_service_preferences' ) );
@@ -36,7 +36,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	function init() {
 		$this->init_form_fields();
 		$this->init_settings();
-		
+
 		$this->cubic_rate = 250.0;
 		$this->retail_free_threshold = 50;
 
@@ -44,7 +44,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		$this->sender_loc	= array(
 			'postCode' => $this->get_option( 'sender_pcode' ),
 		);
-	}	
+	}
 
 	function init_form_fields() {
 		$this->form_fields = array(
@@ -97,7 +97,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			} else {
 				$cubic_rate = $WC_TechnoTan_Shipping->cubic_rate;
 				assert($cubic_rate <> 0); //sanity check
-				return max(array($summary['total_weight'], $summary['total_volume']/$cubic_rate));			
+				return max(array($summary['total_weight'], $summary['total_volume']/$cubic_rate));
 			}
 		};
 
@@ -111,7 +111,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 		return array(
 			'TT_WAA1' => array(
-				'title' => __('Australia-Wide Wholesale Priority Freight 1kg'),
+				'title' => __('Australia-Wide Wholesale Air Express - up to 1kg'),
 				'dangerous' => 'N',
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'max_total_container' => 'LABEL1',
@@ -121,7 +121,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAA3' => array(
-				'title' => __('Australia-Wide Wholesale Priority Freight 1-3kg'),
+				'title' => __('Australia-Wide Wholesale Air Express - up to 3kg'),
 				'dangerous' => 'N',
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL1',
@@ -132,7 +132,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAA5' => array(
-				'title' => __('Australia-Wide Wholesale Priority Freight 3-5kg'),
+				'title' => __('Australia-Wide Wholesale Air Express - up to 5kg'),
 				'dangerous' => 'N',
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL3',
@@ -143,7 +143,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAA' => array(
-				'title' => __('Australia-Wide Wholesale Priority Freight 5kg+'),
+				'title' => __('Australia-Wide Wholesale Air Express - 5kg+'),
 				'dangerous' => 'N',
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL5',
@@ -159,7 +159,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAR5'=> array(
-				'title' => __('Australia-Wide Wholesale Road Freight 5kg'),
+				'title' => __('Australia-Wide Wholesale Road Freight - up to 5kg'),
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'max_total_container' => 'LABEL5',
 				'elig_fn' => $elig_australia,
@@ -168,7 +168,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAR10'=> array(
-				'title' => __('Australia-Wide Wholesale Road Freight 10kg'),
+				'title' => __('Australia-Wide Wholesale Road Freight - 5-10kg'),
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL5',
 				'max_total_container' => 'LABEL10',
@@ -178,7 +178,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAR20'=> array(
-				'title' => __('Australia-Wide Wholesale Road Freight 20kg'),
+				'title' => __('Australia-Wide Wholesale Road Freight - 10-20kg'),
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL10',
 				'max_total_container' => 'LABEL20',
@@ -188,7 +188,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				}
 			),
 			'TT_WAR'=> array(
-				'title' => __('Australia-Wide Wholesale Road Freight 20kg+'),
+				'title' => __('Australia-Wide Wholesale Road Freight - 20kg+'),
 				'include_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'min_total_container' => 'LABEL20',
 				'max_item_container' => 'LABEL20',
@@ -201,66 +201,66 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 						return false;
 					}
 				}
-			),								
+			),
 			'TT_RARF' => array(
 				'title' => __('Free Australia-Wide Road Freight'),
 				'include_roles' => array('RN', 'RP', 'XRN', 'XRP'),
 				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
-						call_user_func( $elig_australia, $package ) and 
-						call_user_func( $over_retail_threshold, $package) 
+						call_user_func( $elig_australia, $package ) and
+						call_user_func( $over_retail_threshold, $package)
 					);
 				},
 				'cost_fn' => function( $package ){
 					return 0.0;
 				}
-			),							
+			),
 			'TT_RAAF' => array(
 				'title' => __('Free Australia-Wide Air Freight'),
 				'include_roles' => array('RN', 'RP', 'XRN', 'XRP'),
 				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
-				'max_item_container' => 'LABEL5',		
-				'dangerous' => 'N',		
+				'max_item_container' => 'LABEL5',
+				'dangerous' => 'N',
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
-						call_user_func( $elig_australia, $package ) and 
-						call_user_func( $over_retail_threshold, $package) 
+						call_user_func( $elig_australia, $package ) and
+						call_user_func( $over_retail_threshold, $package)
 					);
 				},
 				'cost_fn' => function( $package ){
 					return 0.0;
 				}
-			),							
+			),
 			'TT_RAR' => array(
 				'title' => __('Australia-Wide Road Freight'),
 				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
-						call_user_func( $elig_australia, $package ) and 
-						!call_user_func( $over_retail_threshold, $package) 
-					);
-				},
-				'cost_fn' => function( $package ){
-					return 6.95;
-				}
-			),							
-			'TT_RAA' => array(
-				'title' => __('Australia-Wide Air Freight'),
-				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
-				'max_item_container' => 'LABEL5',
-				'dangerous' => 'N',				
-				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
-					return (
-						call_user_func( $elig_australia, $package ) and 
-						!call_user_func( $over_retail_threshold, $package) 
+						call_user_func( $elig_australia, $package ) and
+						!call_user_func( $over_retail_threshold, $package)
 					);
 				},
 				'cost_fn' => function( $package ){
 					return 6.95;
 				}
 			),
-		);		
+			'TT_RAA' => array(
+				'title' => __('Australia-Wide Air Freight'),
+				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
+				'max_item_container' => 'LABEL5',
+				'dangerous' => 'N',
+				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
+					return (
+						call_user_func( $elig_australia, $package ) and
+						!call_user_func( $over_retail_threshold, $package)
+					);
+				},
+				'cost_fn' => function( $package ){
+					return 6.95;
+				}
+			),
+		);
 	}
 
 	public function get_volume($dimensions){
@@ -270,7 +270,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	    			$meters = wc_get_dimension($dim, 'm');
 	    			if(WOOTAN_DEBUG) error_log("-> converting $dim to meters: $meters");
 	    			return $meters;
-				}, 
+				},
 				$dimensions
 			)
 		);
@@ -334,7 +334,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             if($line['data']->has_dimensions()){
                 $item_dim = explode(' x ', $line['data']->get_dimensions());
                 $dimension_unit = get_option( 'woocommerce_dimension_unit' );
-                $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]); 
+                $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]);
 				if(WOOTAN_DEBUG) error_log("--> item dim: ".serialize($item_dim));
                 $item_vol = $this->get_volume($item_dim);
 				if(WOOTAN_DEBUG) error_log("--> item vol: $item_vol");
@@ -342,12 +342,12 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             } else {
                 return false;
             }
-		}	
+		}
 		if(WOOTAN_DEBUG) error_log("-> total weight: $total_weight, total volume: $total_vol");
 		return array(
 			'total_weight' => $total_weight,
 			'total_volume' => $total_vol,
-		);	
+		);
 	}
 
 	public function fits_in_container($item, $container){
@@ -376,9 +376,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		if(isset($container['max_dim'])){
 			if(WOOTAN_DEBUG) error_log('-> testing dim eligibility');
 			if( isset($item['length']) and isset($item['width']) and isset($item['height']) ){
-				$dim_item 	= array( 
-					$item['length'], 
-					$item['width'], 
+				$dim_item 	= array(
+					$item['length'],
+					$item['width'],
 					$item['height']
 				);
 				$dim_max 	= $container['max_dim'];
@@ -391,7 +391,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 							$fits = false;
 						}
 					}
-					if( $fits ) break; 
+					if( $fits ) break;
 				}
 
 				if(!$fits){
@@ -441,11 +441,11 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		if(WOOTAN_DEBUG) error_log("-> determining number of fucks given");
 		$fucks_given = array();
 		foreach( $wootan_methods as $code => $method ){
-			if( array_intersect( 
+			if( array_intersect(
 				array(
 					'min_total_container',
 					'max_total_container',
-				), 
+				),
 				array_keys($method)
 			) ) {
 				$fucks_given['summary'] = true;
@@ -454,11 +454,11 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				array(
 					'include_roles',
 					'exclude_roles',
-				), 
+				),
 				array_keys($method)
 			) ) {
 				$fucks_given['tiers'] = true;
-			}						
+			}
 		}
 		if(isset($fucks_given['summary'])){
 			if(WOOTAN_DEBUG) error_log("--> getting summary");
@@ -468,7 +468,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			} else {
 				if(WOOTAN_DEBUG) error_log("---> cannot get summary");
 				return;
-			}		
+			}
 		}
 		if(isset($fucks_given['tiers'])){
 			if(WOOTAN_DEBUG) error_log("--> getting roles");
@@ -488,7 +488,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 			if(WOOTAN_DEBUG) error_log("");
 			if(WOOTAN_DEBUG) error_log("-> testing eligibility of ".$name);
-			
+
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
 				if(WOOTAN_DEBUG) error_log("--> testing dangerous criteria");
@@ -528,7 +528,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 					continue;
 				} else {
 					if(WOOTAN_DEBUG) error_log('---> user not excluded');
-				}			
+				}
 			}
 
 			//test total containers
@@ -545,7 +545,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				);
 
 				if (isset($method['min_total_container'])) {
-					$container = $method['min_total_container'];					
+					$container = $method['min_total_container'];
 					if(WOOTAN_DEBUG) error_log("--> testing min_total_container criteria: ".$method['min_total_container']);
 					if(in_array($container, array_keys($wootan_containers))){
 						$result = $this->fits_in_container($total_item, $wootan_containers[$container]);
@@ -592,10 +592,10 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		            if($line['data']->has_dimensions()){
 		                $item_dim = explode(' x ', $line['data']->get_dimensions());
 		                $dimension_unit = get_option( 'woocommerce_dimension_unit' );
-		                $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]); 
+		                $item_dim[2] = str_replace( ' '.$dimension_unit, '', $item_dim[2]);
 		            } else {
 		                // throw exception because can't get dimensions
-		            }	
+		            }
 		            $item = array(
 		            	'kilo' => $item_weight,
 		            	'length' => $item_dim[0],
@@ -635,7 +635,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			//gauntlet passed, add rate
 			if(WOOTAN_DEBUG) error_log("-> method passed");
 
-			
+
 			if( isset($method['cost_fn']) ){
 				$cost = call_user_func($method['cost_fn'], $package);
 				if(! is_numeric( $cost ) ){
