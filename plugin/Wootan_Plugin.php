@@ -6,7 +6,7 @@ include_once('Wootan_LifeCycle.php');
 class Wootan_Plugin extends Wootan_LifeCycle {
 
     private static $instance;
-    
+
     public static function init() {
         if ( self::$instance == null ) {
             self::$instance = new Wootan_Plugin();
@@ -95,6 +95,103 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     public function upgrade() {
     }
 
+    function write_notice_once($message) {
+        if(!property_exists($this, 'printed_messages')){
+            $this->printed_messages = array();
+        }
+        if(!in_array($message, $this->printed_messages)){
+            wc_add_notice($message, $notice_type='notice');
+            array_push($this->printed_messages, $message);
+        }
+    }
+
+    function write_danger_notice() {
+        $message = __(
+            'Sorry, you are not eligible for air freight options because '
+            .'your cart contains dangerous goods'
+        );
+        $this->write_notice_once($message);
+    }
+
+    function write_po_box_notice($ajax=false) {
+        $message = __(
+            'Sorry, you are not eligible for freight options because '
+            .'your address is a PO box'
+        );
+        if($ajax){
+            global $woocommerce;
+            $woocommerce->add_error($message);
+        }
+        $this->write_notice_once($message);
+    }
+
+    public function is_product_dangerous($_product) {
+        if(WOOTAN_DEBUG) error_log("---> testing danger of ".serialize($_product));
+        if($_product instanceof WC_Product){
+            $_product = $_product->get_id();
+        }
+        if($_product and is_numeric($_product)){
+            $danger = get_post_meta($_product, 'wootan_danger', true);
+            if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
+            return $danger == "Y";
+        }
+        if(WOOTAN_DEBUG) error_log("----> danger not found ".serialize($danger));
+    }
+
+    public function are_contents_dangerous($contents) {
+        if(!is_array($contents)){
+            return false;
+        }
+		foreach( $contents as $line ){
+            $data = isset($line['data'])?$line['data']:array();
+
+            $danger = $this->is_product_dangerous($line['product_id']);
+			if($danger){
+                return true;
+            }
+
+		}
+		return false;
+	}
+
+    public function is_cart_dangerous() {
+        $contents = WC()->cart->get_cart();
+        return $this->are_contents_dangerous($contents);
+    }
+
+    public function is_address_po_box($line1, $line2='') {
+        if(WOOTAN_DEBUG) error_log("---> testing po box of ".serialize(array($line1, $line2)));
+
+        //TODO: fix this
+        $replace  = array(" ", ".", ",");
+        $address  = strtolower( str_replace( $replace, '', $line1.$line2 ) );
+        if(strstr($address, "pobox") !== false){
+            if(WOOTAN_DEBUG) error_log("----> contains po box");
+            return true;
+        }
+    }
+
+    public function is_customer_po_box() {
+        $customer = WC()->customer;
+        $shipping_address_1 = $customer->get_shipping_address();
+        $shippihg_address_2 = $customer->get_shipping_address_2();
+        return $this->is_address_po_box($shipping_address_1, $shippihg_address_2);
+    }
+
+    public function maybe_print_cart_messages() {
+        if($this->is_customer_po_box()){
+            $this->write_po_box_notice();
+        }
+        if($this->is_cart_dangerous()){
+            $this->write_danger_notice();
+        }
+    }
+
+    public function maybe_do_ajax_cart_messages() {
+        if($this->is_customer_po_box()){
+            $this->write_po_box_notice(true);
+        }
+    }
 
     public function addActionsAndFilters() {
 
@@ -121,6 +218,21 @@ class Wootan_Plugin extends Wootan_LifeCycle {
                 $methods[] = 'WC_Technotan_Shipping';
                 return $methods;
             }
+        );
+
+        add_filter(
+            'woocommerce_before_checkout_form',
+            array($this, 'maybe_print_cart_messages')
+        );
+
+        add_filter(
+            'woocommerce_before_cart_contents',
+            array($this, 'maybe_print_cart_messages')
+        );
+
+        add_filter(
+            'woocommerce_after_checkout_validation',
+            array($this, 'woocommerce_after_checkout_validation')
         );
 
         // Adding scripts & styles to all pages

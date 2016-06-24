@@ -43,7 +43,8 @@ class Wootan_OptionsManager {
      *       'Rating:', 'Excellent', 'Good', 'Fair', 'Poor')
      */
     public function getOptionMetaData() {
-        return array();
+        return array(
+        );
     }
 
     /**
@@ -439,4 +440,3 @@ class Wootan_OptionsManager {
         return $sitename;
     }
 }
-

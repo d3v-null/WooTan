@@ -40,6 +40,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		$this->cubic_rate = 250.0;
 		$this->retail_free_threshold = 50;
 
+		$this->cubic_rate = floatval( $this->get_option( 'cubic_rate' ));
+		$this->retail_free_threshold = floatval( $this->get_option( 'retail_free_threshold' ));
 		$this->enabled 		= $this->get_option( 'enabled' );
 		$this->sender_loc	= array(
 			'postCode' => $this->get_option( 'sender_pcode' ),
@@ -60,6 +62,20 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				'description' => __('Postcode of the location from which packages are being despatched from'),
 				'desc_tip'	=> true,
 				'default'	=> ''
+			),
+			'retail_free_threshold' => array(
+				'title'	=> __("Retail Free Threshold"),
+				'type'	=> 'text',
+				'description' => __('Value over which retail gets free shipping'),
+				'desc_tip'	=> true,
+				'default'	=> '50'
+			),
+			'cubic_rate' => array(
+				'title'	=> __("Cubic Rate"),
+				'type'	=> 'text',
+				'description' => __('Rate in kg / m^3'),
+				'desc_tip'	=> true,
+				'default'	=> '250'
 			),
 		);
 	}
@@ -87,26 +103,45 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		};
 
 		$total_order_shipping = function( $package ){
-			global $WC_TechnoTan_Shipping;
-			if(!isset($WC_TechnoTan_Shipping)){
-				$WC_TechnoTan_Shipping = new WC_TechnoTan_Shipping();
-			}
-			$summary = $WC_TechnoTan_Shipping->get_summary( $package['contents'] );
+			if(WOOTAN_DEBUG) error_log( 'testing total order eligibility');// of '.serialize($package) );
+
+			$summary = $this->get_summary( $package['contents'] );
 			if(!$summary){
 				return false;
 			} else {
-				$cubic_rate = $WC_TechnoTan_Shipping->cubic_rate;
+				$cubic_rate = $this->cubic_rate;
 				assert($cubic_rate <> 0); //sanity check
 				return max(array($summary['total_weight'], $summary['total_volume']/$cubic_rate));
 			}
+			// global $WC_TechnoTan_Shipping;
+			// if(!isset($WC_TechnoTan_Shipping)){
+			// 	$WC_TechnoTan_Shipping = new WC_TechnoTan_Shipping();
+			// }
+			// $summary = $WC_TechnoTan_Shipping->get_summary( $package['contents'] );
+			// if(!$summary){
+			// 	return false;
+			// } else {
+			// 	$cubic_rate = $WC_TechnoTan_Shipping->cubic_rate;
+			// 	assert($cubic_rate <> 0); //sanity check
+			// 	return max(array($summary['total_weight'], $summary['total_volume']/$cubic_rate));
+			// }
 		};
 
 		$over_retail_threshold = function( $package ){
-			global $WC_TechnoTan_Shipping;
-			if(!isset($WC_TechnoTan_Shipping)){
-				$WC_TechnoTan_Shipping = new WC_TechnoTan_Shipping();
-			}
-			return ($package['contents_cost'] >= $WC_TechnoTan_Shipping->retail_free_threshold);
+			if(WOOTAN_DEBUG) error_log( 'testing retail threshold eligibility');// of '.serialize($package) );
+
+			$threshold = $this->retail_free_threshold;
+			if(WOOTAN_DEBUG) error_log( '-> retail threshold:'.serialize($threshold));// of '.serialize($package) );
+			$cost = $package['contents_cost'];
+			if(WOOTAN_DEBUG) error_log( '-> cost:'.serialize($cost));// of '.serialize($package) );
+
+			return ($cost >= $threshold);
+			// global $WC_TechnoTan_Shipping;
+			// if(!isset($WC_TechnoTan_Shipping)){
+			// 	$WC_TechnoTan_Shipping = new WC_TechnoTan_Shipping();
+			// }
+			//
+			// return ($package['contents_cost'] >= $WC_TechnoTan_Shipping->retail_free_threshold);
 		} ;
 
 		return array(
@@ -204,7 +239,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_RARF' => array(
 				'title' => __('Free Australia-Wide Road Freight'),
-				'include_roles' => array('RN', 'RP', 'XRN', 'XRP'),
 				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'elig_fn' => function($package) use ($elig_australia, $over_retail_threshold){
 					return (
@@ -218,7 +252,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			),
 			'TT_RAAF' => array(
 				'title' => __('Free Australia-Wide Air Freight'),
-				'include_roles' => array('RN', 'RP', 'XRN', 'XRP'),
 				'exclude_roles' => array('WN', 'WP', 'DN', 'DP', 'XWN', 'XWP', 'XDN', 'XDP'),
 				'max_item_container' => 'LABEL5',
 				'dangerous' => 'N',
@@ -243,7 +276,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				},
 				'cost_fn' => function( $package ){
 					return 6.95;
-				}
+				},
+				'notify_shipping_upgrade' => true
 			),
 			'TT_RAA' => array(
 				'title' => __('Australia-Wide Air Freight'),
@@ -431,8 +465,45 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	// public function admin_options() {
 	// }
 
+	function write_free_fright_notice($package) {
+		$package_total = $package['contents_cost'];
+		$threshold = $this->retail_free_threshold;
+		if($package_total < $threshold){
+			$difference = ceil($threshold - $package_total);
+			$message = "spend another $$difference  and get free shipping!";
+			$this->wootan->write_notice_once($message);
+		}
+	}
+
+	function is_package_dangerous($package) {
+		// foreach( $package['contents'] as $line ){
+		// 	$data = $line['data'];
+		// 	if(WOOTAN_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
+		// 	$danger = get_post_meta($data->post->ID, 'wootan_danger', true);
+		// 	if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
+		// 	if( $danger == "Y" ){
+		// 		return true;
+		// 	}
+		// }
+		// return false;
+		$contents = isset($package['contents'])?$package['contents']:array();
+		return $this->wootan->are_contents_dangerous($contents);
+	}
+
+	function is_package_po_box($package){
+		$destination = isset($package['destination'])?$package['destination']:array();
+		$line1 = isset($destination['address'])?$destination['address']:'';
+		$line2 = isset($destination['address_2'])?$destination['address_2']:'';
+		return $this->wootan->is_address_po_box($line1, $line2);
+	}
+
 	function calculate_shipping( $package ) {
 		if(WOOTAN_DEBUG) error_log("calculating shipping for ".serialize($package));
+
+		if($this->is_package_po_box($package)){
+			if(WOOTAN_DEBUG) error_log("-> package is PO, no shipping options");
+			return;
+		}
 
 		$wootan_containers 	= $this->get_containers();
 		$wootan_methods 	= $this->get_methods();
@@ -492,17 +563,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 			//test dangerous
 			if (isset($method['dangerous']) and $method['dangerous'] == 'N'){
 				if(WOOTAN_DEBUG) error_log("--> testing dangerous criteria");
-				$dangerous = false;
-				foreach( $package['contents'] as $line ){
-					$data = $line['data'];
-					if(WOOTAN_DEBUG) error_log("---> testing danger of ".$data->post->post_title);
-					$danger = get_post_meta($data->post->ID, 'wootan_danger', true);
-					if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
-					if( $danger == "Y" ){
-						$dangerous = true;
-						break;
-					}
-				}
+				$dangerous = $this->is_package_dangerous($package);
 				if( $dangerous) {
 					if(WOOTAN_DEBUG) error_log("--> failed danger criteria");
 					continue;
@@ -625,11 +686,16 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 				if(WOOTAN_DEBUG) error_log("--> testing eligibility criteria");
 				$result = call_user_func($method['elig_fn'], $package);
 				if($result){
-					if(WOOTAN_DEBUG) error_log("---> passed eligibility criteria: ".$result);
+					if(WOOTAN_DEBUG) error_log("---> passed eligibility criteria: ".serialize($result));
 				} else {
-					if(WOOTAN_DEBUG) error_log("---> failed eligibility criteria: ".$result);
+					if(WOOTAN_DEBUG) error_log("---> failed eligibility criteria: ".serialize($result));
 					continue;
 				}
+			}
+
+			if (isset($method['notify_shipping_upgrade'])) {
+				if(WOOTAN_DEBUG) error_log("--> adding shipping upgrade notification");
+				$this->write_free_fright_notice($package);
 			}
 
 			//gauntlet passed, add rate
