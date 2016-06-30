@@ -235,6 +235,14 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             array($this, 'woocommerce_after_checkout_validation')
         );
 
+        add_filter(
+            'woocommerce_shipping_methods',
+            function($methods){
+                $methods['TechnoTan_Shipping'] = 'WC_TechnoTan_Shipping';
+                return $methods;
+            }
+        );
+
         // Adding scripts & styles to all pages
         // Examples:
         //        wp_enqueue_script('jquery');

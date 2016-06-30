@@ -1,4 +1,7 @@
 <?php
+
+//based off the WC_Shipping_Flat_Rate method on GitHub
+
 global $woocommerce;
 
 if(!defined('WOOTAN_DEBUG'))
@@ -6,8 +9,10 @@ if(!defined('WOOTAN_DEBUG'))
 
 class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
-
-	public function __construct(){
+	/**
+	 * Constructor.
+	 */
+	public function __construct( $instance_id = 0 ){
 		require_once('Wootan_Plugin.php');
 
 		if(WOOTAN_DEBUG) error_log( 'wootan debugging enabled');
@@ -15,68 +20,78 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		$this->tree = Lasercommerce_Tier_Tree::instance();
 		$this->wootan = Wootan_Plugin::instance();
 
-		$this->id = 'TechnoTan_Shipping';
-		$this->method_title	= __( 'TechnoTan Shipping' );
-		$this->method_description = __( "Send by TechnoTan's road or air shipping otions" );
-
-		$this->enabled = "yes";
-		$this->title   = __( 'TechnoTan Shipping' );
-
-		$this->service_pref_option = $this->id.'_service_preferences';
-		$this->matched_suburb_option = $this->id.'_matched_suburb';
-        $this->matched_state_option = $this->id.'_matched_state';
+		$this->id 					 = 'TechnoTan_Shipping';
+		$this->instance_id 			 = absint( $instance_id );
+		$this->method_title			 = __( 'TechnoTan Shipping' );
+		$this->title   				 = __( 'TechnoTan Shipping' );
+		$this->method_description 	 = __( "Send by TechnoTan's road or air shipping otions" );
+		$this->supports              = array(
+			'shipping-zones',
+			'instance-settings',
+			'instance-settings-modal',
+			'settings'
+		);
+		$this->init();
 
         add_action( 'woocommerce_update_options_shipping_'.$this->id, array( $this, 'process_admin_options' ) );
-        // add_action( 'woocommerce_update_options_shipping_'.$this->id, array( $this, 'process_service_preferences' ) );
-
-        $this->init();
 
 	}
 
+	/**
+	 * init user set variables.
+	 */
 	function init() {
-		$this->init_form_fields();
+		$this->form_fields = $this->get_form_fields();
+		$this->instance_form_fields = $this->get_instance_form_fields();
 		$this->init_settings();
+		$this->init_instance_settings();
+		$this->enabled = $this->get_option('enabled');
 
-		$this->cubic_rate = 250.0;
-		$this->retail_free_threshold = 50;
+		$this->cubic_rate = floatval( $this->get_instance_option('cubic_rate') );
+		$this->retail_free_threshold = floatval( $this->get_instance_option( 'retail_free_threshold' ));
+	}
 
-		$this->cubic_rate = floatval( $this->get_option( 'cubic_rate' ));
-		$this->retail_free_threshold = floatval( $this->get_option( 'retail_free_threshold' ));
-		$this->enabled 		= $this->get_option( 'enabled' );
-		$this->sender_loc	= array(
-			'postCode' => $this->get_option( 'sender_pcode' ),
+	/**
+	 * Get setting form fields for instances of this shipping method within zones.
+	 * @return array
+	 */
+	public function get_instance_form_fields(){
+		return array(
+		    'tax_status' => array(
+		        'title' 		=> __( 'Tax Status' ),
+		        'type' 			=> 'select',
+		        'class'         => 'wc-enhanced-select',
+		        'default' 		=> 'taxable',
+		        'options'		=> array(
+		            'taxable' 	=> __( 'Taxable' ),
+		            'none' 		=> _x( 'None', 'Tax status' )
+		        )
+		    ),
+		    'retail_free_threshold' => array(
+		        'title'	=> __("Retail Free Threshold"),
+		        'type'	=> 'text',
+		        'description' => __('Value over which retail gets free shipping'),
+		        'desc_tip'	=> true,
+		        'default'	=> '50'
+		    ),
+		    'cubic_rate' => array(
+		        'title'	=> __("Cubic Rate"),
+		        'type'	=> 'text',
+		        'description' => __('Rate in kg / m^3'),
+		        'desc_tip'	=> true,
+		        'default'	=> '250'
+		    ),
 		);
 	}
 
-	function init_form_fields() {
-		$this->form_fields = array(
+	public function get_form_fields(){
+		return array(
 			'enabled'	=> array(
-				'title'	=> __('Enable/Disable'),
-				'type'	=> 'checkbox',
-				'label' => __('Enable this shipping method'),
-				'default' => 'no',
-			),
-			'sender_pcode' => array(
-				'title'	=> __("Sender's Post Code"),
-				'type'	=> 'text',
-				'description' => __('Postcode of the location from which packages are being despatched from'),
-				'desc_tip'	=> true,
-				'default'	=> ''
-			),
-			'retail_free_threshold' => array(
-				'title'	=> __("Retail Free Threshold"),
-				'type'	=> 'text',
-				'description' => __('Value over which retail gets free shipping'),
-				'desc_tip'	=> true,
-				'default'	=> '50'
-			),
-			'cubic_rate' => array(
-				'title'	=> __("Cubic Rate"),
-				'type'	=> 'text',
-				'description' => __('Rate in kg / m^3'),
-				'desc_tip'	=> true,
-				'default'	=> '250'
-			),
+			    'title'	=> __('Enable/Disable'),
+			    'type'	=> 'checkbox',
+			    'label' => __('Enable this shipping method'),
+			    'default' => 'yes',
+			)
 		);
 	}
 
@@ -311,7 +326,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 	}
 
 	public function get_containers() {
-		$cubic_rate = 250.0;
 
 		return array(
 			'AIRBAG1' => array(
@@ -497,7 +511,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 		return $this->wootan->is_address_po_box($line1, $line2);
 	}
 
-	function calculate_shipping( $package ) {
+	function calculate_shipping( $package=array() ) {
 		if(WOOTAN_DEBUG) error_log("calculating shipping for ".serialize($package));
 
 		if($this->is_package_po_box($package)){
@@ -716,9 +730,10 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
 			$this->add_rate(
 				array(
-					'id' => $code,
+					'id' => $this->get_rate_id($code),
 					'label'	=> $name,
 					'cost'	=> $cost,
+					'package' => $package,
 					//'calc_tax' => 'per_item',
 				)
 			);
