@@ -6,11 +6,14 @@ include_once('Wootan_LifeCycle.php');
 class Wootan_Plugin extends Wootan_LifeCycle {
 
     private static $instance;
+    private static $logger;
 
     public static function init() {
         if ( self::$instance == null ) {
             self::$instance = new Wootan_Plugin();
         }
+
+        self::$logger = wc_get_logger();
     }
 
     public static function instance() {
@@ -211,11 +214,19 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         // http://plugin.michael-simpson.com/?page_id=37
 
         // register shipping method
+        add_action(
+            'woocommerce_shipping_init',
+            function(){
+                if( ! class_exists("WC_TechnoTan_Shipping") ){
+                    require( dirname( __FILE__ ) .  "/WC_TechnoTan_Shipping.php" );
+                }
+            }
+        );
+
         add_filter(
             'woocommerce_shipping_methods',
             function( $methods ){
-                require_once( dirname( __FILE__ ) .  "/WC_TechnoTan_Shipping.php" );
-                $methods[] = 'WC_Technotan_Shipping';
+                $methods['TechnoTan_Shipping'] = 'WC_TechnoTan_Shipping';
                 return $methods;
             }
         );
@@ -235,14 +246,6 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             array($this, 'woocommerce_after_checkout_validation')
         );
 
-        add_filter(
-            'woocommerce_shipping_methods',
-            function($methods){
-                $methods['TechnoTan_Shipping'] = 'WC_TechnoTan_Shipping';
-                return $methods;
-            }
-        );
-
         // Adding scripts & styles to all pages
         // Examples:
         //        wp_enqueue_script('jquery');
@@ -257,6 +260,32 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         // Register AJAX hooks
         // http://plugin.michael-simpson.com/?page_id=41
 
+    }
+
+    /**
+     * Add a log entry.
+     *
+     * @param string $level One of the following:
+     *     'emergency': System is unusable.
+     *     'alert': Action must be taken immediately.
+     *     'critical': Critical conditions.
+     *     'error': Error conditions.
+     *     'warning': Warning conditions.
+     *     'notice': Normal but significant condition.
+     *     'informational': Informational messages.
+     *     'debug': Debug-level messages.
+     * @param string $message Log message.
+     * @param array $context Optional. Additional information for log handlers.
+     */
+    public function log($level, $message, array $context=array()){
+        $default_context = array('source'=>$this->getPluginDisplayName());
+        $context = array_merge($default_context, $context);
+
+        self::$logger->log($level, $message, $context);
+    }
+
+    public function debug($message, array $context=array()){
+        $this->log('debug', $message, $context);
     }
 
 
