@@ -2,6 +2,7 @@
 
 
 include_once('Wootan_LifeCycle.php');
+// include_once('WC_TechnoTan_Shipping.php');
 
 class Wootan_Plugin extends Wootan_LifeCycle {
 
@@ -32,10 +33,10 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         //  http://plugin.michael-simpson.com/?page_id=31
         return array(
             //'_version' => array('Installed Version'), // Leave this one commented-out. Uncomment to test upgrades.
-            'ATextInput' => array(__('Enter in some text', 'my-awesome-plugin')),
-            'Donated' => array(__('I have donated to this plugin', 'my-awesome-plugin'), 'false', 'true'),
-            'CanSeeSubmitData' => array(__('Can See Submission data', 'my-awesome-plugin'),
-                                        'Administrator', 'Editor', 'Author', 'Contributor', 'Subscriber', 'Anyone')
+            'Donated' => array(__('I have donated to this plugin'), 'false', 'true'),
+            'CanSeeSubmitData' => array(__('Can See Submission data'),
+                                        'Administrator', 'Editor', 'Author', 'Contributor', 'Subscriber', 'Anyone'),
+            'ShippingID' => array('custom_shipping')
         );
     }
 
@@ -44,16 +45,16 @@ class Wootan_Plugin extends Wootan_LifeCycle {
 //        return $i18nValue;
 //    }
 
-    // protected function initOptions() {
-    //     $options = $this->getOptionMetaData();
-    //     if (!empty($options)) {
-    //         foreach ($options as $key => $arr) {
-    //             if (is_array($arr) && count($arr > 1)) {
-    //                 $this->addOption($key, $arr[1]);
-    //             }
-    //         }
-    //     }
-    // }
+    protected function initOptions() {
+        $options = $this->getOptionMetaData();
+        if (!empty($options)) {
+            foreach ($options as $key => $arr) {
+                if (is_array($arr) && count($arr > 1)) {
+                    $this->addOption($key, $arr[1]);
+                }
+            }
+        }
+    }
 
     public function getPluginDisplayName() {
         return 'WooTan';
@@ -96,6 +97,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
      * @return void
      */
     public function upgrade() {
+        $this->initOptions();
     }
 
     function write_notice_once($message) {
@@ -198,6 +200,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
 
     public function addActionsAndFilters() {
 
+
         // Add options administration page
         // http://plugin.michael-simpson.com/?page_id=47
         // add_action('admin_menu', array(&$this, 'addSettingsSubMenuPage'));
@@ -218,15 +221,16 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             'woocommerce_shipping_init',
             function(){
                 if( ! class_exists("WC_TechnoTan_Shipping") ){
-                    require( dirname( __FILE__ ) .  "/WC_TechnoTan_Shipping.php" );
+                    include( "WC_TechnoTan_Shipping.php" );
                 }
             }
         );
 
+        $shipping_id = $this->getOption('ShippingID');
         add_filter(
             'woocommerce_shipping_methods',
-            function( $methods ){
-                $methods['TechnoTan_Shipping'] = 'WC_TechnoTan_Shipping';
+            function( $methods ) use ($shipping_id){
+                $methods[$shipping_id] = 'WC_TechnoTan_Shipping';
                 return $methods;
             }
         );

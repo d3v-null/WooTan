@@ -55,7 +55,7 @@ function Wootan_PhpVersionCheck() {
 }
 
 function Wootan_noticeWoocommerceNotInstalled() {
-    echo 
+    echo
         '<div class="updated fade">' .
         __('Error: plugin "WooTan" requires WooCommerce to be installed',  'WooTan') .
         '</div>';
@@ -70,7 +70,7 @@ function Wootan_WoocommerceCheck() {
 }
 
 function Wootan_noticeLasercommerceNotInstalled() {
-    echo 
+    echo
         '<div class="updated fade">' .
         __('Error: plugin "WooTan" requires LaserCommerce to be installed',  'WooTan') .
         '</div>';
@@ -95,6 +95,8 @@ function Wootan_i18n_init() {
     $pluginDir = dirname(plugin_basename(__FILE__));
     load_plugin_textdomain('wootan', false, $pluginDir . '/languages/');
 }
+
+
 
 
 //////////////////////////////////
