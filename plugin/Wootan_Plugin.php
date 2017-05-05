@@ -49,8 +49,8 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         $options = $this->getOptionMetaData();
         if (!empty($options)) {
             foreach ($options as $key => $arr) {
-                if (is_array($arr) && count($arr > 1)) {
-                    $this->addOption($key, $arr[1]);
+                if (is_array($arr) && count($arr) > 0) {
+                    $this->addOption($key, $arr[0]);
                 }
             }
         }
@@ -98,6 +98,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
      */
     public function upgrade() {
         $this->initOptions();
+        $this->updateOption('ShippingID', 'custom_shipping');
     }
 
     function write_notice_once($message) {

@@ -2,7 +2,7 @@
 /*
    Plugin Name: WooTan
    Plugin URI: http://wordpress.org/extend/plugins/wootan/
-   Version: 0.1
+   Version: 0.2
    Author: Derwent
    Description: Tailored Woocommerce extensions for TechnoTan namely a customized shipping plugin
    Text Domain: wootan
