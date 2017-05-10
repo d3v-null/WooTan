@@ -62,9 +62,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         $this->retail_free_threshold = floatval( $this->get_option( 'retail_free_threshold' ));
 
         // Actions
+        add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
         if( !empty($this->errors) ){
-            add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
-        } else {
             add_action( 'admin_notices', array($this, 'display_errors') );
         }
 
@@ -134,6 +133,24 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'desc_tip'      => true,
                 'type'          => 'container_list'
             ),
+            'min_order' => array(
+                'title'         => __( 'Minimum Order Value' ),
+                'description'   => __( 'The minimum total order value for which this method appears'),
+                'desc_tip'      => true,
+                'type'          => 'nonnegative_number',
+            ),
+            'max_order' => array(
+                'title'         => __( 'Maximum Order Value'),
+                'description'   => __( 'The maximum total order value for which this method appears'),
+                'desc_tip'      => true,
+                'type'          => 'nonnegative_number',
+            ),
+            'notify_free_shipping' => array(
+                'title'         => __( 'Notify Free Shipping' ),
+                'description'   => __( 'Notify the customer that they can get free shipping if their order is above max_order'),
+                'desc_tip'      => true,
+                'type'          => 'checkbox'
+            ),
             'cost' => array(
                 'title'         => __( 'Cost Formula' ),
                 'type'          => 'text',
@@ -150,13 +167,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'type'    => 'checkbox',
                 'label' => __('Enable this shipping method'),
                 'default' => 'yes',
-            ),
-            'retail_free_threshold' => array(
-                'title'    => __("Retail Free Threshold"),
-                'type'    => 'text',
-                'description' => __('Value over which retail gets free shipping'),
-                'desc_tip'    => true,
-                'default'    => '50'
             ),
             'cubic_rate' => array(
                 'title'    => __("Cubic Rate"),
@@ -191,11 +201,12 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         ob_start();
         $this->display_errors();
         $errors_html = ob_get_clean();
-        $response = '<div><h2>Errors</h2>' . $errors_html . '</div><hr/>' . $response;
-        $response .= "<h2>Test Results</h2>"
-            ."<p><strong>CONTAINERS: </strong>".serialize($this->get_containers())."</p>"
-            ."<p><strong>CONTAINER_OPTIONS: </strong>".serialize($this->get_container_options())."</p>"
-            ."<p><strong>ROLES: </strong>".serialize($this->get_role_options())."</p>";
+        $response .= $errors_html;
+        // $response = '<div><h2>Errors</h2>' . $errors_html . '</div><hr/>' . $response;
+        // $response .= "<h2>Test Results</h2>"
+        //     ."<p><strong>CONTAINERS: </strong>".serialize($this->get_containers())."</p>"
+        //     ."<p><strong>CONTAINER_OPTIONS: </strong>".serialize($this->get_container_options())."</p>"
+        //     ."<p><strong>ROLES: </strong>".serialize($this->get_role_options())."</p>";
         return $response;
     }
 
@@ -699,7 +710,40 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             }
         }
 
-        # TODO: COST FN
+        # Min / max order value
+        $order_limits = array();
+        foreach( array('min', 'max') as $key ) {
+            $order_limits[$key] = floatval($this->get_option($key . '_order'));
+        }
+        if( !empty( array_filter( array_values( $order_limits )))) {
+            if(WOOTAN_DEBUG) $this->wootan->debug("--> getting order value");
+            $order_value = floatval($package['contents_cost']);
+            if( isset($order_limits['min']) && $order_limits['min'] > 0){
+                if( $order_limits['min'] > $order_value ){
+                    if(WOOTAN_DEBUG) $this->wootan->debug("---> failed min_order criteria: ".serialize($order_value). " > " .serialize($order_limits['min']));
+                    return;
+                } else {
+                    if(WOOTAN_DEBUG) $this->wootan->debug("---> passed min_order criteria: ".serialize($order_value));
+                }
+            }
+            if( isset($order_limits['max']) && $order_limits['max'] > 0 ){
+                if( $order_limits['max'] <= $order_value ){
+                    if(WOOTAN_DEBUG) $this->wootan->debug("---> failed max_order criteria: ".serialize($order_value) . " > " .serialize($order_limits['max']));
+                    return;
+                } else {
+                    if(WOOTAN_DEBUG) $this->wootan->debug("---> passed max_order criteria: ".serialize($order_value));
+                }
+                if( $this->get_option('notify_free_shipping') ) {
+                    $difference = ceil($order_limits['max'] - $order_value);
+                    $message = "spend another $$difference and get free shipping!";
+                    $this->wootan->write_notice_once($message);
+                }
+            }
+        }
+
+
+
+        # Cost calculation
         $cost = 0;
         $cost_formula = $this->get_option( 'cost' );
 
