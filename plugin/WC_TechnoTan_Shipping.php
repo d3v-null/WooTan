@@ -54,6 +54,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         $this->title = $this->get_option( 'title' );
         $this->enabled = $this->get_option( 'enabled' ); # is this necessary?
         $this->cubic_rate = floatval( $this->get_option('cubic_rate') );
+        if( floatval($this->get_option('override_cubic_rate')) ){
+            $this->cubic_rate = floatval($this->get_option('override_cubic_rate'));
+        }
         if( $this->cubic_rate <= 0 ){
             // Sanity check
             $this->errors[] = "invalid cubic weight: $this->cubic_rate. Should be a number above zero";
@@ -150,6 +153,12 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'description'   => __( 'Notify the customer that they can get free shipping if their order is above max_order'),
                 'desc_tip'      => true,
                 'type'          => 'checkbox'
+            ),
+            'override_cubic_rate' => array(
+                'title'         => __( 'Override Cubic Rate' ),
+                'description'   => __( 'If set, this value will override the global cubic rate for this method only' ),
+                'desc_tip'      => true,
+                'type'          => 'nonnegative_number'
             ),
             'cost' => array(
                 'title'         => __( 'Cost Formula' ),
