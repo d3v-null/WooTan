@@ -80,10 +80,15 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         $this->instance_form_fields =  array(
             'title' => array(
                 'title'         => __( 'Title' ),
-                'type'        => 'text',
-                'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce' ),
-                'default'     => __( 'TechnoTan Custom Shipping Instance' ),
-                'desc_tip'    => true,
+                'type'          => 'text',
+                'description'   => __( 'This controls the title which the user sees during checkout.', 'woocommerce' ),
+                'default'       => __( 'TechnoTan Custom Shipping Instance' ),
+                'desc_tip'      => true,
+            ),
+            'tooltip' => array(
+                'title'         => __( 'Tooltip' ),
+                'description'   => __( 'Information to show to the user when selecting shipping method' ),
+                'type'          => 'textarea',
             ),
             'tax_status' => array(
                 'title'         => __( 'Tax Status' ),
@@ -778,10 +783,19 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             );
         }
 
-        $this->add_rate( array(
+        $rate = array(
             'label' => $this->title,
             'package' => $package,
             'cost' => $cost,
-        ) );
+        ) ;
+
+        if( $this->get_option('tooltip') ){
+            $rate['meta_data'] = array();
+            $rate['meta_data']['tooltip'] = $this->get_option('tooltip');
+        }
+
+        if(WOOTAN_DEBUG) $this->wootan->debug("adding rate: ".serialize($rate));
+
+        $this->add_rate( $rate );
     }
 }

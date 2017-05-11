@@ -199,6 +199,63 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         }
     }
 
+    function help_tip( $tip, $content, $allow_html = false ) {
+        if( $allow_html ) {
+            $tip = wc_sanitize_tooltip( $tip );
+        } else {
+            $tip = esc_attr( $tip );
+        }
+
+        return  $content 
+            . '<span class="wt-tooltip" >'
+            . '<i class="fa fa-question-circle" aria-hidden="true"></i>'
+            . '<span class="wt-tooltiptext">'. $tip . '</span>'
+            . '</span>';
+    }
+
+    public function add_shipping_method_title_tooltop($label, $rate=false){
+        // $label .= "<div><h3>tooltip debug</h3>labe_pre: " . htmlspecialchars($label);
+        $meta = $rate->get_meta_data();
+        if($meta && isset($meta['tooltip']) && ! empty($meta['tooltip'])){
+            // $label .= htmlspecialchars("tooltip: ".$meta['tooltip']);
+            $label = $this->help_tip($meta['tooltip'], $label, true);
+            // $label .= $tip_html;
+            // $label .= htmlspecialchars($tip_html);
+        }
+        // $label .= "</div>";
+        return $label;
+    }
+
+    public function maybe_enqueue_enable_tooltip() {
+        if(is_cart() || is_checkout()) {
+            // $this->debug("enabling tooltip");
+            // wp_register_style( 'bootstrap-css','https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css', false, null );
+            // wp_register_script( 'bootstap-js', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js', array('jquery'), null );
+            // wp_register_script(
+            //     'wt_enable_tooltip_js',
+            //     plugins_url('/wootan/js/enable_tooltip.js'),
+            //     array(
+            //         'jquery', 'jquery-ui-core', 'jquery-ui-tooltip',
+            //         'jquery-ui-widget', 'jquery-ui-position', 'jquery-effects-core',
+            //         // 'bootstrap-js'
+            //     ),
+            //     0.1,
+            //     true
+            // );
+            // wp_enqueue_script('bootstrap-js');
+            // wp_enqueue_script('wt_enable_tooltip_js');
+            // wp_enqueue_style('bootstrap-css');
+            wp_register_style(
+                'wt_tooltip_css',
+                plugins_url('/wootan/css/tooltip.css')
+                // array('bootstrap-css')
+            );
+            wp_enqueue_style('wt_tooltip_css');
+        } else {
+            // $this->debug("not enabling tooltip");
+        }
+    }
+
     public function addActionsAndFilters() {
 
 
@@ -249,6 +306,19 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         add_filter(
             'woocommerce_after_checkout_validation',
             array($this, 'woocommerce_after_checkout_validation')
+        );
+
+        add_filter(
+            'woocommerce_cart_shipping_method_full_label',
+            array($this, 'add_shipping_method_title_tooltop'),
+            0,
+            2
+        );
+
+        add_action(
+            'wp_enqueue_scripts',
+            array($this, 'maybe_enqueue_enable_tooltip'),
+            99
         );
 
         // Adding scripts & styles to all pages
