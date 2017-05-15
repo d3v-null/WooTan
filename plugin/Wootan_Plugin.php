@@ -232,10 +232,10 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     }
 
     public function add_shipping_method_title_tooltop($label, $rate=false){
-        // $label .= "<div><h3>tooltip debug</h3>labe_pre: " . htmlspecialchars($label);
+        if(WOOTAN_DEBUG) $this->wootan->debug("BEGIN WC_TechnoTan_Shipping->init()");
+
         $meta = $rate->get_meta_data();
         if($meta && isset($meta['tooltip']) && ! empty($meta['tooltip'])){
-            // $label .= htmlspecialchars("tooltip: ".$meta['tooltip']);
             // error_log("meta: ".serialize($meta));
             $label = $this->help_tip($meta['tooltip'], $label, true);
             // $label .= $tip_html;

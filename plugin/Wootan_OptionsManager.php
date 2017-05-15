@@ -19,6 +19,9 @@
     If not, see http://www.gnu.org/licenses/gpl-3.0.html
 */
 
+if(!defined('WOOTAN_DEBUG'))
+    define('WOOTAN_DEBUG', false);
+
 class Wootan_OptionsManager {
 
     public function getOptionNamePrefix() {
