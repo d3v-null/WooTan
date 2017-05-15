@@ -332,8 +332,10 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
     public function validate_nonnegative_number_field( $key, $value ) {
         // error_log("validating nonnegative_number html $key $value");
         $value = parent::validate_decimal_field($key, $value);
-        if(is_null($value) or floatval($value) <= 0) {
-            $message = "invalid value for $key: $value. Not a nonnegative number";
+        if(is_null($value)){
+            $value = '';
+        } else if(floatval($value) < 0) {
+            $message = "invalid value for $key: $value => ".floatval($value).". Not a nonnegative number";
             $this->wootan->debug($message);
             $this->errors[] = $message;
             $value = '';
@@ -633,7 +635,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
     }
 
     function calculate_shipping( $package=array() ) {
-        if(WOOTAN_DEBUG) $this->wootan->debug("calculating shipping for ".serialize($package));
+        if(WOOTAN_DEBUG) $this->wootan->debug("calculating shipping for ".serialize($package)." in method: ".$this->title);
 
         $po_box_allowed = $this->get_option('po_box');
         if(! empty($po_box_allowed) and $po_box_allowed == 'N' ){
