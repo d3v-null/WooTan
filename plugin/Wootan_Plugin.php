@@ -114,7 +114,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     function write_danger_notice() {
         $message = __(
             'Sorry, you are not eligible for air freight options because '
-            .'your cart contains dangerous goods'
+            .'your cart contains items that cannot be shipped by air'
         );
         $this->write_notice_once($message);
     }
@@ -130,6 +130,19 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         }
         $this->write_notice_once($message);
     }
+
+    // function write_shipping_total_notice() {
+    //     $contents = WC()->cart->get_cart();
+    //     foreach ($variable as $key => $value) {
+    //         # code...
+    //     }
+    //     $message = __('Your total shipping amount is ');
+    //     if($ajax){
+    //         global $woocommerce;
+    //         $woocommerce->add_error($message);
+    //     }
+    //     $this->write_notice_once($message);
+    // }
 
     public function is_product_dangerous($_product) {
         // if(WOOTAN_DEBUG) error_log("---> testing danger of ".serialize($_product));
@@ -191,6 +204,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         if($this->is_cart_dangerous()){
             $this->write_danger_notice();
         }
+        // $this->write_shipping_total_notice();
     }
 
     public function maybe_do_ajax_cart_messages() {
@@ -212,14 +226,14 @@ class Wootan_Plugin extends Wootan_LifeCycle {
 
         return  ''
             // . '<div class="wt-title-wrapper>"'
-            . '<a class="wt-tooltip" >'
+            . '<span class="wt-tooltip" >'
             // . '<span class="wt-title-content">'
             . $content
             // . '</span>'
             . '<i class="fa fa-question-circle" aria-hidden="true"></i>'
             // . '?'
             . '<div class="wt-tooltip-box">'. $tip . '</div>'
-            . '</a>'
+            . '</span>'
             // . '</div>'
             ;
 
