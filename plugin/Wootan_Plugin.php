@@ -132,16 +132,16 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     }
 
     public function is_product_dangerous($_product) {
-        if(WOOTAN_DEBUG) error_log("---> testing danger of ".serialize($_product));
+        // if(WOOTAN_DEBUG) error_log("---> testing danger of ".serialize($_product));
         if($_product instanceof WC_Product){
             $_product = $_product->get_id();
         }
         if($_product and is_numeric($_product)){
             $danger = get_post_meta($_product, 'wootan_danger', true);
-            if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
+            // if(WOOTAN_DEBUG) error_log("----> danger is ".serialize($danger));
             return $danger == "Y";
         }
-        if(WOOTAN_DEBUG) error_log("----> danger not found ".serialize($danger));
+        // if(WOOTAN_DEBUG) error_log("----> danger not found ".serialize($danger));
     }
 
     public function are_contents_dangerous($contents) {
@@ -166,13 +166,13 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     }
 
     public function is_address_po_box($line1, $line2='') {
-        if(WOOTAN_DEBUG) error_log("---> testing po box of ".serialize(array($line1, $line2)));
+        // if(WOOTAN_DEBUG) error_log("---> testing po box of ".serialize(array($line1, $line2)));
 
         //TODO: fix this
         $replace  = array(" ", ".", ",");
         $address  = strtolower( str_replace( $replace, '', $line1.$line2 ) );
         if(strstr($address, "pobox") !== false){
-            if(WOOTAN_DEBUG) error_log("----> contains po box");
+            // if(WOOTAN_DEBUG) error_log("----> contains po box");
             return true;
         }
     }
@@ -200,17 +200,35 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     }
 
     function help_tip( $tip, $content, $allow_html = false ) {
+
         if( $allow_html ) {
-            $tip = wc_sanitize_tooltip( $tip );
+            $tip = wp_kses( $tip, wp_kses_allowed_html() );
+            $tip = html_entity_decode($tip);
         } else {
             $tip = esc_attr( $tip );
         }
 
-        return  $content 
-            . '<span class="wt-tooltip" >'
+        // error_log("tip: ".serialize($tip));
+
+        return  ''
+            // . '<div class="wt-title-wrapper>"'
+            . '<a class="wt-tooltip" >'
+            // . '<span class="wt-title-content">'
+            . $content
+            // . '</span>'
             . '<i class="fa fa-question-circle" aria-hidden="true"></i>'
-            . '<span class="wt-tooltiptext">'. $tip . '</span>'
-            . '</span>';
+            // . '?'
+            . '<div class="wt-tooltip-box">'. $tip . '</div>'
+            . '</a>'
+            // . '</div>'
+            ;
+
+            // . '<div class="wt-tooltip-handle" >'
+            // . '<i class="fa fa-question-circle" aria-hidden="true"></i>'
+            // . '<div class="wt-tooltip-box">'
+            // . '<span class="wt-tooltip-text">'. $tip . '</span>'
+            // . '</div>'
+            // . '</div>';
     }
 
     public function add_shipping_method_title_tooltop($label, $rate=false){
@@ -218,6 +236,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         $meta = $rate->get_meta_data();
         if($meta && isset($meta['tooltip']) && ! empty($meta['tooltip'])){
             // $label .= htmlspecialchars("tooltip: ".$meta['tooltip']);
+            // error_log("meta: ".serialize($meta));
             $label = $this->help_tip($meta['tooltip'], $label, true);
             // $label .= $tip_html;
             // $label .= htmlspecialchars($tip_html);
