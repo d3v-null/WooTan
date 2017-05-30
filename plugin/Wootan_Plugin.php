@@ -334,10 +334,10 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             array($this, 'maybe_print_cart_messages')
         );
 
-        add_filter(
-            'woocommerce_after_checkout_validation',
-            array($this, 'woocommerce_after_checkout_validation')
-        );
+        // add_filter(
+        //     'woocommerce_after_checkout_validation',
+        //     array($this, 'woocommerce_after_checkout_validation')
+        // );
 
         add_filter(
             'woocommerce_cart_shipping_method_full_label',
