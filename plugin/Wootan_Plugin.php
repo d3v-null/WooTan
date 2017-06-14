@@ -101,13 +101,19 @@ class Wootan_Plugin extends Wootan_LifeCycle {
         $this->updateOption('ShippingID', 'custom_shipping');
     }
 
-    function write_notice_once($message) {
-        if(!property_exists($this, 'printed_messages')){
-            $this->printed_messages = array();
+    /** fixes this issue where cookie is not generated until cart is created:
+        https://github.com/woocommerce/woocommerce/issues/4920
+     */
+    function notice_session_fix() {
+        global $woocommerce;
+        if(!isset($woocommerce->session) || !$woocommerce->session->has_session()){
+            do_action( 'woocommerce_set_cart_cookies',  true );
         }
-        if(!in_array($message, $this->printed_messages)){
-            wc_add_notice($message, $notice_type='notice');
-            array_push($this->printed_messages, $message);
+    }
+
+    function write_notice_once($message) {
+        if(!wc_has_notice($message, 'notice')){
+            wc_add_notice($message, 'notice');
         }
     }
 
@@ -351,6 +357,15 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             array($this, 'maybe_enqueue_enable_tooltip'),
             99
         );
+
+        /**
+         * fix notice not displaying before session created
+         */
+        add_action(
+            'woocommerce_add_to_cart',
+            array($this, 'notice_session_fix')
+        );
+
 
         // Adding scripts & styles to all pages
         // Examples:
