@@ -766,8 +766,12 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
             // bypass role limit checks if user is admin
             if( !user_can($user, 'manage_woocommerce') ){
-                $visibleTiers = $this->tree->getVisibleTiers($user);
-                $visibleTierIDs = $this->tree->getTierIDs($visibleTiers);
+                if($this->tree){
+                  $visibleTiers = $this->tree->getVisibleTiers($user);
+                  $visibleTierIDs = $this->tree->getTierIDs($visibleTiers);
+                } else {
+                  $visibleTierIDs = $user->roles;
+                }
                 if(WOOTAN_DEBUG) $this->wootan->debug("---> visible tiers are: ".serialize($visibleTierIDs));
 
                 if (isset($role_limits['include'])) {
