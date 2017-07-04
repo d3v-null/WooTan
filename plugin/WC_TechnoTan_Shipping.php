@@ -19,8 +19,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         $this->id                       = $this->wootan->getOption('ShippingID');
         // if(WOOTAN_DEBUG) error_log("WC_TechnoTan_Shipping->__construct: \$this->id = ".serialize($this->id));
         $this->instance_id              = absint( $instance_id );
-        $this->method_title             = __( 'TechnoTan Custom Shipping' );
-        $this->method_description       = __( "Send by TechnoTan's road or air shipping otions" );
+        $this->method_title             = __( 'WooTan Custom Shipping' );
+        $this->method_description       = __( "Send by custom shipping otions" );
         $this->supports              = array(
             'shipping-zones',
             'instance-settings',
