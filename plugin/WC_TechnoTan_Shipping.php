@@ -775,7 +775,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 if(WOOTAN_DEBUG) $this->wootan->debug("---> visible tiers are: ".serialize($visibleTierIDs));
 
                 if (isset($role_limits['include'])) {
-                    if(WOOTAN_DEBUG) $this->wootan->debug("--> testing include role criteria");
+                    if(WOOTAN_DEBUG) $this->wootan->debug("--> testing include role criteria with: ".serialize($role_limits['include']));
                     if( array_intersect( $role_limits['include'], $visibleTierIDs ) ) {
                         if(WOOTAN_DEBUG) $this->wootan->debug('---> user included');
                     } else {
@@ -784,7 +784,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                     }
                 }
                 if (isset($role_limits['exclude'])) {
-                    if(WOOTAN_DEBUG) $this->wootan->debug("--> testing exclude role criteria");
+                    if(WOOTAN_DEBUG) $this->wootan->debug("--> testing exclude role criteria with: ".serialize($role_limits['exclude']));
                     if( ! array_intersect( $role_limits['exclude'], $visibleTierIDs) ) {
                         if(WOOTAN_DEBUG) $this->wootan->debug('---> user not excluded');
                     } else {
