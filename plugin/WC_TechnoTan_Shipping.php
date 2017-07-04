@@ -8,9 +8,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
      * Constructor.
      */
     public function __construct( $instance_id = 0 ){
-        if(class_exists("Lasercommerce_Tier_Tree")){
-            $this->tree = Lasercommerce_Tier_Tree::instance();
-        }
         if(class_exists("Wootan_Plugin")){
             $this->wootan = Wootan_Plugin::instance();
         }
@@ -766,14 +763,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
             // bypass role limit checks if user is admin
             if( !user_can($user, 'manage_woocommerce') ){
-                if($this->tree != null){
-                  if(WOOTAN_DEBUG) $this->wootan->debug("---> visible tiers based off tier tree");
-                  $visibleTiers = $this->tree->getVisibleTiers($user);
-                  $visibleTierIDs = $this->tree->getTierIDs($visibleTiers);
-                } else {
-                  if(WOOTAN_DEBUG) $this->wootan->debug("---> visible tiers based off user->roles");
-                  $visibleTierIDs = $user->roles;
-                }
+
+                $visibleTierIDs = $user->roles;
                 if(WOOTAN_DEBUG) $this->wootan->debug("---> visible tiers are: ".serialize($visibleTierIDs));
 
                 if (isset($role_limits['include'])) {
