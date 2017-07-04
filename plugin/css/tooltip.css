@@ -33,7 +33,7 @@
   padding: 10px 10px 10px 10px;
 }
 
-.wt-tooltip:hover .wt-tooltip-box {
+.wt-tooltip:hover + .wt-tooltip-box {
     opacity:1;
 }
 

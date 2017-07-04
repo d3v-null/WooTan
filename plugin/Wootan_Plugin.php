@@ -238,8 +238,8 @@ class Wootan_Plugin extends Wootan_LifeCycle {
             // . '</span>'
             . '<i class="fa fa-question-circle" aria-hidden="true"></i>'
             // . '?'
-            . '<div class="wt-tooltip-box">'. $tip . '</div>'
             . '</span>'
+            . '<div class="wt-tooltip-box">'. $tip . '</div>'
             // . '</div>'
             ;
 
