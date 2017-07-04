@@ -85,7 +85,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'title'         => __( 'Title' ),
                 'type'          => 'text',
                 'description'   => __( 'This controls the title which the user sees during checkout.', 'woocommerce' ),
-                'default'       => __( 'TechnoTan Custom Shipping Instance' ),
+                'default'       => __( 'WooTan Custom Shipping Instance' ),
                 'desc_tip'      => true,
             ),
             'tooltip' => array(
