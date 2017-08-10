@@ -390,7 +390,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         // Do the math
         $response = $sum ? WC_Eval_Math::evaluate( $sum ) : 0;
         $context['return'] = serialize($response);
-        if(WOOTAN_DEBUG) $this->wootan->procedureEnd("", $this->defaultContext);
+        if(WOOTAN_DEBUG) $this->wootan->procedureEnd("", $context);
         return $response;
     }
 
@@ -512,7 +512,7 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'width' => $item_dim[1],
                 'height' => $item_dim[2]
             );
-            foreach (range(0, $line['quantity']) as $index) {
+            foreach (range(1, $line['quantity']) as $index) {
                 $summary['items'][] = $item;
             }
         }
@@ -526,27 +526,32 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
     public function fits_in_container($item, $container){
         $context = array_merge($this->defaultContext, array(
             'caller'=>$this->_class."FITS_IN_CONTAINER",
-            'args'=>"\$items=".serialize($items).", \$container=".serialize($container)
+            'args'=>"\$item=".serialize($item).", \$container=".serialize($container)
         ));
         if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
 
         $remainder = $container;
 
-        $dim_item = array(0,0,0);
-        if( isset($container['volume']) || isset($container['dimensions']) ){
-            if( isset($item['length']) and isset($item['width']) and isset($item['height']) ){
-                $dim_item     = array(
-                    $item['length'],
-                    $item['width'],
-                    $item['height']
-                );
-            } else {
+        if(isset($item['length']) and isset($item['width']) and isset($item['height'])) {
+            $item['dimensions'] = array(
+                $item['length'],
+                $item['width'],
+                $item['height']
+            );
+        }
+        if( isset($container['dimensions']) ){
+            if(!isset($item['dimensions'])){
                 $remainder = false;
                 $context['return'] = serialize($remainder);
                 if(WOOTAN_DEBUG) $this->wootan->procedureEnd("dims not specified", $context);
+                return $remainder;
             }
         }
-        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> item dims: '.serialize($dim_item), $context);
+        if(isset($item['dimensions'])){
+            $item['volume'] = $this->get_volume_si($item['dimensions']);
+        }
+        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> item dims: '.serialize($item['dimensions']), $context);
+        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> item vol: '.serialize($item['volume']), $context);
 
         //weight eligibility
         if(isset($container['weight'])){
@@ -558,8 +563,9 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                     if(WOOTAN_DEBUG) $this->wootan->procedureEnd("does not fit, item too heavy", $context);
                     return $remainder;
                 } else {
-                    if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> fits!', $context);
+                    if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> remainder: '.serialize($remainder), $context);
                     $remainder['weight'] -= $item['weight'];
+                    if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> fits! remainder: '.serialize($remainder), $context);
                 }
             } else {
                 $remainder = false;
@@ -578,23 +584,24 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             foreach( range(0,2) as $rotation ){
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> rotation: '.serialize($rotation), $context);
                 // Rotate the dimensions of the item
-                array_push($dim_item, array_shift($dim_item));
-                if(WOOTAN_DEBUG) $this->wootan->procedureDebug('---> dim_item: '.serialize($dim_item), $context);
+                array_push($item['dimensions'], array_shift($item['dimensions']));
+                if(WOOTAN_DEBUG) $this->wootan->procedureDebug('---> dim_item: '.serialize($item['dimensions']), $context);
 
-                $fits = true; // assume it fits until proven otherwise
+                $rotation_fits = true; // assume it fits until proven otherwise
                 $remaining_dimensions = array();
                 foreach (range(0,2) as $dimension ) {
-                    if( $dim_item[$dimension] > $dim_max[$dimension] ){
-                        $reason = "dimension too big: ". $dim_item[$dimension] . $this->dimension_unit;
-                        $fits = false;
+                    if( $item['dimensions'][$dimension] > $dim_max[$dimension] ){
+                        $reason = "dimension too big: ". $item['dimensions'][$dimension] . $this->dimension_unit;
+                        $rotation_fits = false;
                         break;
                     }
-                    $remaining_dimensions[] = $dim_max[$dimension] - $dim_item[$dimension];
+                    $remaining_dimensions[] = $dim_max[$dimension] - $item['dimensions'][$dimension];
                 }
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug('---> remaining_dimensions: '.serialize($remaining_dimensions), $context);
-                if( !$fits ){
+                if( !$rotation_fits ){
                     continue;
                 }
+                $fits = $rotation_fits;
                 $remaining_volume = $this->get_volume_si($remaining_dimensions);
                 $best_remaining_volume = $this->get_volume_si($best_remaining_dimensions);
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug('---> remaining_volume: '.serialize($remaining_volume), $context);
@@ -608,15 +615,15 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 if(WOOTAN_DEBUG) $this->wootan->procedureEnd("does not fit: ".$reason, $context);
                 return $remainder;
             }
-            if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> fits!', $context);
             $remainder['dimensions'] = $best_remaining_dimensions;
+            if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> fits! remainder: '.serialize($remainder), $context);
 
         }
         //vol eligiblity
         if(isset($container['volume'])){
             if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> testing vol eligibility', $context);
+            $item_vol = $item['volume'];
             $max_vol = $container['volume'];
-            $item_vol = $this->get_volume_si($dim_item);
             if( $item_vol > $max_vol ){
                 $remainder = false;
                 $context['return'] = serialize($remainder);
@@ -625,27 +632,65 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             }
             $remainder['volume'] -= $item_vol;
         }
-        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> fits!', $context) ;
         $context['return'] = serialize($remainder);
         if(WOOTAN_DEBUG) $this->wootan->procedureEnd("", $context);
         return $remainder;
+    }
+
+    function melt($item){
+        $context = array_merge($this->defaultContext, array(
+            'caller'=>$this->_class."MELT",
+            'args'=>"\$item=".serialize($item)
+        ));
+        if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
+        $melted_item = array();
+        if(isset($item['weight'])) {
+            $melted_item['weight'] = $item['weight'];
+        }
+        if(isset($item['volume'])) {
+            $melted_item['volume'] = $item['volume'];
+        }
+        if(isset($item['dimensions'])) {
+            $melted_item['volume'] = $this->get_volume_si($item['dimensions']);
+        }
+        if( isset($item['length']) and isset($item['width']) and isset($item['height']) ){
+            $melted_item['volume'] = $this->get_volume_si(array(
+                $item['length'],
+                $item['width'],
+                $item['height']
+            ));
+        }
+
+        $context['return'] = serialize($melted_item);
+        if(WOOTAN_DEBUG) $this->wootan->procedureEnd("", $context);
+        return $melted_item;
     }
 
     /**
      * Calculate the number of containers required to store a list of items
      * TODO: containers_required()
      */
-    function containers_required( $items, $container ){
+    function containers_required( $items, $container, $melt=True ){
         $context = array_merge($this->defaultContext, array(
             'caller'=>$this->_class."CONTAINERS_REQUIRED",
             'args'=>"\$items=".serialize($items).", \$container=".serialize($container)
         ));
         if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
 
+        if($melt){
+            $container = $this->melt($container);
+        }
+
         $bin_capacities = array(
             $container
         );
+        if(WOOTAN_DEBUG) $this->wootan->procedureDebug("items: ".serialize($items), $context);
         foreach ($items as $item) {
+            if($melt){
+                $item = $this->melt($item);
+            }
+            if(WOOTAN_DEBUG) $this->wootan->procedureDebug("item: ".serialize($item), $context);
+            if(WOOTAN_DEBUG) $this->wootan->procedureDebug("bins: ".serialize($bin_capacities), $context);
             $requires_new_bin = true;
             foreach( $bin_capacities as $bin_index => $bin_capacity ){
                 $remainder = $this->fits_in_container($item, $bin_capacity);
@@ -663,12 +708,18 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 if($remainder){
                     $bin_capacities[] = $remainder;
                 } else {
-                    return false;
+                    $response = false;
+                    $context['return'] = serialize($response);
+                    if(WOOTAN_DEBUG) $this->wootan->procedureEnd("item could not fit in a new container", $context);
+                    return $response;
                 }
             }
         }
 
-        return count($bin_capacities);
+        $response = count($bin_capacities);
+        $context['return'] = serialize($response);
+        if(WOOTAN_DEBUG) $this->wootan->procedureEnd("", $context);
+        return $response;
     }
 
     function calculate_shipping( $package=array() ) {
