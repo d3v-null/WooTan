@@ -19,10 +19,9 @@
     If not, see http://www.gnu.org/licenses/gpl-3.0.html
 */
 
-if(!defined('WOOTAN_DEBUG'))
-    define('WOOTAN_DEBUG', false);
+include_once('Wootan_Debugger.php');
 
-class Wootan_OptionsManager {
+class Wootan_OptionsManager extends Wootan_Debugger{
 
     public function getOptionNamePrefix() {
         return get_class($this) . '_';
