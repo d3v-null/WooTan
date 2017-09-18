@@ -124,6 +124,17 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                     'N'=>        __( 'No' )
                 )
             ),
+            'interstate' => array(
+                'title'         => __( 'Allow Interstate' ),
+                'description'   => __( 'Allow items to be shipped outside of the state.' ),
+                'desc_tip'      => true,
+                'type'          => 'select',
+                'default'       => 'Y',
+                'options'       => array(
+                    'Y'=>        __( 'Yes' ),
+                    'N'=>        __( 'No' )
+                )
+            ),
             'include_roles' => array(
                 'title'         => __( 'Roles Allowed' ),
                 'description'   => __( 'Allow these roles to see this shipping method. None = all roles can see'),
@@ -219,6 +230,18 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                     .'"LABEL10":{"weight":9.5}, '
                     .'"LABEL20":{"weight":19.2}'
                     .'}'
+            ),
+            'default_weight' => array(
+                'title' => __("Default Weight"),
+                'type' => 'text',
+                'description' => __('The weight of any item which does not have a weight') . '( ' . $this->weight_unit . ' )',
+                'default' => '0.1'
+            ),
+            'default_dimension' => array(
+                'title' => __('Default dimension'),
+                'type' => 'text',
+                'description' => __('The side length of any item which is missing a dimension') . '( ' . $this->dimension_unit . ' )',
+                'default' => '1'
             )
         );
     }
@@ -465,8 +488,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("getting totals for contents: ".serialize($contents), $this->defaultContext);
         // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("dimensions are in $this->dimension_unit", $this->defaultContext);
         $summary = array(
-            'weight' => 0,
-            'volume' => 0,
+            'weight' => 0.0,
+            'volume' => 0.0,
             'max_dim' => 0,
             'items' => array()
         );
@@ -480,32 +503,35 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
 
             if($line['data']->has_weight()){
                 $item_weight = wc_get_weight( $line['data']->get_weight(), $this->weight_unit);
-                // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item weight: $item_weight", $this->defaultContext);
-                $summary['weight'] += $line['quantity'] * $item_weight;
             } else {
-                $message = "can't get weigh of ". $line['product_id'];
+                $message = "can't get weight of ". $line['product_id'];
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> failed to get summary - $message: ".serialize($line['data']), $this->defaultContext);
                 $this->errors[] = $message;
-                return false;
+                $item_weight = floatval($this->get_option('default_weight'));
             }
+            // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item weight: $item_weight", $this->defaultContext);
+            $summary['weight'] += $line['quantity'] * $item_weight;
             if($line['data']->has_dimensions()){
                 $item_dim = array_values($line['data']->get_dimensions(false));
                 $item_dim = array_map('floatval', $item_dim);
-                foreach ($item_dim as $dimension) {
-                    if( $dimension > $summary['max_dim'] ){
-                        $summary['max_dim'] = $dimension;
-                    }
-                }
-                // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item dim: ".serialize($item_dim), $this->defaultContext);
-                $item_vol = $this->get_volume_si($item_dim);
-                // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item vol: $item_vol", $this->defaultContext);
-                $summary['volume'] += $line['quantity'] * $item_vol;
             } else {
                 $message = "can't get dimensions of ". $line['product_id'];
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> failed max_item_container criteria - $message ".serialize($line['data']), $this->defaultContext);
                 $this->errors[] = $message;
-                return false;
+                $default_dim = floatval($this->get_option('default_dimension'));
+                $item_dim = array(
+                    $default_dim, $default_dim, $default_dim
+                );
             }
+            foreach ($item_dim as $dimension) {
+                if( $dimension > $summary['max_dim'] ){
+                    $summary['max_dim'] = $dimension;
+                }
+            }
+            // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item dim: ".serialize($item_dim), $this->defaultContext);
+            $item_vol = $this->get_volume_si($item_dim);
+            // if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> item vol: $item_vol", $this->defaultContext);
+            $summary['volume'] += $line['quantity'] * $item_vol;
             $item = array(
                 'weight' => $item_weight,
                 'length' => $item_dim[0],
@@ -722,12 +748,33 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         return $response;
     }
 
+    function is_package_interstate( $package=array() ) {
+        $store_base_state = "";
+        global $woocommerce;
+        if(isset($woocommerce)){
+            $store_base_state = $woocommerce->countries->get_base_state();
+        }
+        $destination = isset($package['destination'])?$package['destination']:array();
+        $package_state = isset($destination['state'])?$destination['state']:"";
+        if( !empty($package_state) && !empty($store_base_state) ){
+            return $store_base_state != $package_state;
+        }
+    }
+
     function calculate_shipping( $package=array() ) {
         $context = array_merge($this->defaultContext, array(
             'caller'=>$this->_class."CALCULATE_SHIPPING",
             'args'=>"\$package=".serialize($package)
         ));
         if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
+
+        $interstate_allowed = $this->get_option('interstate');
+        if(! empty($interstate_allowed) and $interstate_allowed == 'N'){
+            if($this->is_package_interstate($package)){
+                if(WOOTAN_DEBUG) $this->wootan->procedureDebug("-> package is interstate but method does not allow.", $context);
+                return;
+            }
+        }
 
         $po_box_allowed = $this->get_option('po_box');
         if(! empty($po_box_allowed) and $po_box_allowed == 'N' ){
@@ -747,7 +794,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
             } else {
                 if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> passed danger criteria", $context);
             }
-
         }
 
         if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> getting summary", $context);
