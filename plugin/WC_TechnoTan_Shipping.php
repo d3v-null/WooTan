@@ -242,6 +242,12 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 'type' => 'text',
                 'description' => __('The side length of any item which is missing a dimension') . '( ' . $this->dimension_unit . ' )',
                 'default' => '1'
+            ),
+            'order_limits_tax' => array(
+                'title' => __('Order Limits Include Tax'),
+                'type' => 'checkbox',
+                'description' => __('Disable if min / max order limits should be tax exclusive'),
+                'default' => 'yes'
             )
         );
     }
