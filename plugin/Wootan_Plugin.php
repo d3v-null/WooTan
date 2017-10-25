@@ -102,7 +102,7 @@ class Wootan_Plugin extends Wootan_LifeCycle {
     }
 
     /** fixes this issue where cookie is not generated until cart is created:
-        https://github.com/woocommerce/woocommerce/issues/4920
+     *  https://github.com/woocommerce/woocommerce/issues/4920
      */
     function notice_session_fix() {
         global $woocommerce;

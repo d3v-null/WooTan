@@ -32,10 +32,12 @@
   -o-transition:  opacity 0.5s;
   transition:  opacity 0.5s;
   padding: 10px 10px 10px 10px;
+  pointer-events: none;
 }
 
 .wt-tooltip:hover + .wt-tooltip-box {
     opacity:1;
+    pointer-events: auto;
 }
 
  /* Notes
