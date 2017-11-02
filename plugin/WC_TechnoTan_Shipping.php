@@ -774,6 +774,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         ));
         if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
 
+        $user =
+
         $interstate_allowed = $this->get_option('interstate');
         if(! empty($interstate_allowed) and $interstate_allowed == 'N'){
             if($this->is_package_interstate($package)){
@@ -900,21 +902,41 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                 }
             }
         }
+        $user = false;
+        $user_email = false;
+        $visibleTierIDs = array();
+        $user_act_role = false;
+
+        if(isset($package['user']['ID'])){
+            $user = new WP_User( $package['user']['ID'] );
+            if(isset($user->user_email)) {
+                $user_email = $user->user_email;
+            }
+            if(isset($user->roles)) {
+                $visibleTierIDs = $user->roles;
+            }
+            $user_act_role = get_user_meta($package['user']['ID'], 'act_role', true);
+        }
+        if(WOOTAN_DEBUG) {
+            $this->wootan->procedureDebug("---> visible tiers are: ".serialize($visibleTierIDs), $context);
+            $this->wootan->procedureDebug("---> user email is: ".serialize($user_email), $context);
+            $this->wootan->procedureDebug("---> user act_role is: ".serialize($user_act_role), $context);
+        }
 
         $role_limits = array();
         foreach (array('include', 'exclude') as $key) {
             $role_limits[$key] = $this->get_option($key.'_roles');
         }
         if( ! empty( array_filter( array_values($role_limits))) ) {
+            if(WOOTAN_DEBUG) $this->wootan->procedureDebug('--> There are role requirements', $context);
+            if(!$user and !empty(array_filter($role_limit['include']))){
+                if(WOOTAN_DEBUG) $this->wootan->procedureDebug('---> user not logged in so can\'t pass include', $context);
+                return;
+            }
             if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> getting roles", $context);
-            $user = new WP_User( $package['user']['ID'] );
 
             // bypass role limit checks if user is admin
-            if( !user_can($user, 'manage_woocommerce') ){
-
-                $visibleTierIDs = $user->roles;
-                if(WOOTAN_DEBUG) $this->wootan->procedureDebug("---> visible tiers are: ".serialize($visibleTierIDs), $context);
-
+            if($user && !user_can($user, 'manage_woocommerce') ){
                 if (isset($role_limits['include']) && !empty($role_limits['include'])) {
                     if(WOOTAN_DEBUG) $this->wootan->procedureDebug("--> testing include role criteria with: ".serialize($role_limits['include']), $context);
                     if( array_intersect( $role_limits['include'], $visibleTierIDs ) ) {
@@ -933,6 +955,8 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
                         return;
                     }
                 }
+            } else {
+                if(WOOTAN_DEBUG) $this->wootan->procedureDebug("---> user can manage_woocommerce", $context);
             }
 
         }
