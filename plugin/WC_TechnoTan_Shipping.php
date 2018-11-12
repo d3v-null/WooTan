@@ -582,8 +582,14 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         if(isset($item['dimensions'])){
             $item['volume'] = $this->get_volume_si($item['dimensions']);
         }
-        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> item dims: '.serialize($item['dimensions']), $context);
-        if(WOOTAN_DEBUG) $this->wootan->procedureDebug('-> item vol: '.serialize($item['volume']), $context);
+        if(WOOTAN_DEBUG) {
+            if (isset($item['dimensions'])) {
+                $this->wootan->procedureDebug('-> item dims: '.serialize($item['dimensions']), $context);
+            }
+            if (isset($isset['volume'])) {
+                $this->wootan->procedureDebug('-> item vol: '.serialize($item['volume']), $context);
+            }
+        }
 
         //weight eligibility
         if(isset($container['weight'])){
