@@ -774,8 +774,6 @@ class WC_TechnoTan_Shipping extends WC_Shipping_Method {
         ));
         if(WOOTAN_DEBUG) $this->wootan->procedureStart('', $context);
 
-        $user =
-
         $interstate_allowed = $this->get_option('interstate');
         if(! empty($interstate_allowed) and $interstate_allowed == 'N'){
             if($this->is_package_interstate($package)){
